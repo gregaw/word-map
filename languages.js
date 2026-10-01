@@ -1,0 +1,121 @@
+// Which languages are spoken where. Country names match world-atlas' 50m
+// `countries` object, which is what scripts/build-map.mjs keys the shapes by.
+// `label` is the [lon, lat] where the word is written on the map.
+(function (root) {
+  "use strict";
+
+  // code -> [English name, name in the language]. Codes are ISO 639-1, which is
+  // also what the MyMemory translation API takes.
+  const LANGUAGES = {
+    sq: ["Albanian", "shqip"],
+    hy: ["Armenian", "hayeren"],
+    az: ["Azerbaijani", "azərbaycanca"],
+    eu: ["Basque", "euskara"],
+    be: ["Belarusian", "беларуская"],
+    bs: ["Bosnian", "bosanski"],
+    bg: ["Bulgarian", "български"],
+    ca: ["Catalan", "català"],
+    hr: ["Croatian", "hrvatski"],
+    cs: ["Czech", "čeština"],
+    da: ["Danish", "dansk"],
+    nl: ["Dutch", "Nederlands"],
+    en: ["English", "English"],
+    et: ["Estonian", "eesti"],
+    fo: ["Faroese", "føroyskt"],
+    fi: ["Finnish", "suomi"],
+    fr: ["French", "français"],
+    gl: ["Galician", "galego"],
+    ka: ["Georgian", "ქართული"],
+    de: ["German", "Deutsch"],
+    el: ["Greek", "ελληνικά"],
+    hu: ["Hungarian", "magyar"],
+    is: ["Icelandic", "íslenska"],
+    ga: ["Irish", "Gaeilge"],
+    it: ["Italian", "italiano"],
+    lv: ["Latvian", "latviešu"],
+    lt: ["Lithuanian", "lietuvių"],
+    lb: ["Luxembourgish", "Lëtzebuergesch"],
+    mk: ["Macedonian", "македонски"],
+    mt: ["Maltese", "Malti"],
+    no: ["Norwegian", "norsk"],
+    pl: ["Polish", "polski"],
+    pt: ["Portuguese", "português"],
+    ro: ["Romanian", "română"],
+    ru: ["Russian", "русский"],
+    sr: ["Serbian", "српски"],
+    sk: ["Slovak", "slovenčina"],
+    sl: ["Slovenian", "slovenščina"],
+    es: ["Spanish", "español"],
+    sv: ["Swedish", "svenska"],
+    tr: ["Turkish", "Türkçe"],
+    uk: ["Ukrainian", "українська"],
+    cy: ["Welsh", "Cymraeg"],
+  };
+
+  // First language is the one the country is coloured and compared by.
+  const COUNTRIES = [
+    { name: "Albania", langs: ["sq"], label: [20.0, 41.1] },
+    { name: "Andorra", langs: ["ca"], label: [1.6, 42.55] },
+    { name: "Armenia", langs: ["hy"], label: [44.9, 40.3] },
+    { name: "Austria", langs: ["de"], label: [14.4, 47.6] },
+    { name: "Azerbaijan", langs: ["az"], label: [47.7, 40.3] },
+    { name: "Belarus", langs: ["be", "ru"], label: [28.0, 53.5] },
+    { name: "Belgium", langs: ["nl", "fr"], label: [4.6, 50.6] },
+    { name: "Bosnia and Herz.", langs: ["bs"], label: [17.8, 44.2] },
+    { name: "Bulgaria", langs: ["bg"], label: [25.3, 42.7] },
+    { name: "Croatia", langs: ["hr"], label: [15.6, 45.6] },
+    { name: "Cyprus", langs: ["el", "tr"], label: [33.0, 34.9] },
+    { name: "Czechia", langs: ["cs"], label: [15.3, 49.8] },
+    { name: "Denmark", langs: ["da"], label: [9.3, 56.1] },
+    { name: "Estonia", langs: ["et"], label: [25.8, 58.7] },
+    { name: "Faeroe Is.", langs: ["fo"], label: [-6.9, 62.0] },
+    { name: "Finland", langs: ["fi", "sv"], label: [26.0, 63.0] },
+    { name: "France", langs: ["fr"], label: [2.4, 46.8] },
+    { name: "Georgia", langs: ["ka"], label: [43.5, 42.2] },
+    { name: "Germany", langs: ["de"], label: [10.3, 51.2] },
+    { name: "Greece", langs: ["el"], label: [22.0, 39.5] },
+    { name: "Hungary", langs: ["hu"], label: [19.4, 47.2] },
+    { name: "Iceland", langs: ["is"], label: [-18.6, 64.9] },
+    { name: "Ireland", langs: ["ga", "en"], label: [-8.0, 53.2] },
+    { name: "Italy", langs: ["it"], label: [12.5, 42.8] },
+    { name: "Kosovo", langs: ["sq"], label: [20.9, 42.6] },
+    { name: "Latvia", langs: ["lv"], label: [25.5, 56.9] },
+    { name: "Liechtenstein", langs: ["de"], label: [9.55, 47.15] },
+    { name: "Lithuania", langs: ["lt"], label: [23.9, 55.3] },
+    { name: "Luxembourg", langs: ["lb", "fr", "de"], label: [6.1, 49.7] },
+    { name: "Macedonia", langs: ["mk"], label: [21.7, 41.6] },
+    { name: "Malta", langs: ["mt"], label: [14.4, 35.9] },
+    { name: "Moldova", langs: ["ro"], label: [28.5, 47.2] },
+    { name: "Monaco", langs: ["fr"], label: [7.42, 43.74] },
+    { name: "Montenegro", langs: ["sr"], label: [19.3, 42.8] },
+    { name: "Netherlands", langs: ["nl"], label: [5.6, 52.3] },
+    { name: "Norway", langs: ["no"], label: [9.0, 61.5] },
+    { name: "Poland", langs: ["pl"], label: [19.3, 52.1] },
+    { name: "Portugal", langs: ["pt"], label: [-8.1, 39.7] },
+    { name: "Romania", langs: ["ro"], label: [24.9, 45.9] },
+    { name: "Russia", langs: ["ru"], label: [40.0, 56.5] },
+    { name: "San Marino", langs: ["it"], label: [12.45, 43.94] },
+    { name: "Serbia", langs: ["sr"], label: [20.8, 44.0] },
+    { name: "Slovakia", langs: ["sk"], label: [19.6, 48.7] },
+    { name: "Slovenia", langs: ["sl"], label: [14.8, 46.1] },
+    { name: "Spain", langs: ["es"], label: [-3.7, 40.0] },
+    { name: "Sweden", langs: ["sv"], label: [15.5, 62.5] },
+    { name: "Switzerland", langs: ["de", "fr", "it"], label: [8.2, 46.8] },
+    { name: "Turkey", langs: ["tr"], label: [32.0, 39.3] },
+    { name: "Ukraine", langs: ["uk"], label: [31.2, 49.1] },
+    { name: "United Kingdom", langs: ["en"], label: [-1.8, 52.8] },
+    { name: "Vatican", langs: ["it"], label: [12.45, 41.9] },
+  ];
+
+  // Languages without a country of their own, drawn as a dot at `at` [lon, lat].
+  const REGIONS = [
+    { name: "Catalonia", lang: "ca", at: [1.5, 41.8] },
+    { name: "Basque Country", lang: "eu", at: [-2.6, 43.1] },
+    { name: "Galicia", lang: "gl", at: [-7.9, 42.8] },
+    { name: "Wales", lang: "cy", at: [-3.7, 52.3] },
+  ];
+
+  const api = { LANGUAGES, COUNTRIES, REGIONS };
+  if (typeof module !== "undefined" && module.exports) module.exports = api;
+  else root.EuropeLanguages = api;
+})(typeof window !== "undefined" ? window : globalThis);

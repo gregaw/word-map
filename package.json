@@ -1,0 +1,16 @@
+{
+  "name": "europe-word-map",
+  "private": true,
+  "description": "Type an English word, see it in every European language on a map, coloured by how alike the words sound.",
+  "scripts": {
+    "test": "node --test tests/*.test.js",
+    "build-map": "node scripts/build-map.mjs",
+    "screenshots": "node scripts/screenshots.mjs && python3 scripts/shrink_pngs.py screenshots"
+  },
+  "devDependencies": {
+    "d3-geo": "^3.1.1",
+    "topojson-client": "^3.1.0",
+    "world-atlas": "^2.0.2",
+    "playwright": "^1.56.1"
+  }
+}

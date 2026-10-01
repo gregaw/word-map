@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Europe Word Map</title>
+<style>
+  :root {
+    --bg: #f6f4ef;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6a6f76;
+    --line: #d9d5cc;
+    --sea: #dfe9f0;
+    --land: #e9e6df;
+    --land-lang: #d8d3c8;
+    --border: #ffffff;
+    --accent: #2b5fab;
+    --halo: rgba(255, 255, 255, 0.9);
+    --s1: #fde2b8;
+    --s2: #f8b267;
+    --s3: #ee7a32;
+    --s4: #d7301f;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #16181c; --panel: #1f2227; --ink: #e8e6e1; --muted: #9aa0a8;
+      --line: #33373e; --sea: #1b2530; --land: #2a2d33; --land-lang: #3a3e45;
+      --border: #16181c; --accent: #7aa7ec; --halo: rgba(22, 24, 28, 0.9);
+      --s1: #6b4a22; --s2: #a4602a; --s3: #d0702f; --s4: #ef4a36;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  header { padding: 16px 16px 8px; max-width: 1400px; margin: 0 auto; }
+  h1 { margin: 0 0 4px; font-size: 22px; letter-spacing: -0.01em; }
+  .sub { color: var(--muted); margin: 0 0 12px; }
+  form.search { display: flex; gap: 8px; flex-wrap: wrap; }
+  form.search input {
+    flex: 1 1 220px; font-size: 20px; padding: 10px 14px; border-radius: 10px;
+    border: 1px solid var(--line); background: var(--panel); color: var(--ink);
+  }
+  button {
+    font: inherit; font-weight: 600; padding: 10px 18px; border-radius: 10px;
+    border: 0; background: var(--accent); color: #fff; cursor: pointer;
+  }
+  button.ghost { background: transparent; color: var(--accent); border: 1px solid var(--line); font-weight: 500; }
+  button:disabled { opacity: 0.5; cursor: default; }
+  .presets { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .rowlabel { font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); align-self: center; }
+  @media (min-width: 700px) { .rowlabel { min-width: 150px; } }
+  #stories button.chip { border-color: var(--s2); }
+  .story { margin: 4px 0 0; padding: 10px 14px; border-left: 3px solid var(--s3); background: var(--panel); border-radius: 0 10px 10px 0; max-width: 900px; }
+  #friends button.chip { border-style: dashed; }
+  #list li.friend { cursor: default; padding: 10px 2px; }
+  #list .means { display: block; font-weight: 500; margin: 2px 0; }
+  button.chip { padding: 5px 12px; border-radius: 999px; font-weight: 500; background: var(--panel); color: var(--ink); border: 1px solid var(--line); }
+  button.chip:hover { border-color: var(--accent); color: var(--accent); }
+  #status { min-height: 1.4em; margin: 8px 0 0; color: var(--muted); }
+  #status.error { color: var(--s4); }
+  main {
+    display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 16px;
+    padding: 8px 16px 24px; max-width: 1400px; margin: 0 auto;
+  }
+  @media (max-width: 900px) { main { grid-template-columns: 1fr; } }
+  .mapwrap { background: var(--sea); border-radius: 14px; overflow: hidden; position: relative; }
+  svg { display: block; width: 100%; height: auto; }
+  .bg { fill: var(--land); stroke: var(--border); stroke-width: 0.6; }
+  .bg, .country { vector-effect: non-scaling-stroke; }
+  .country { fill: var(--land-lang); stroke: var(--border); stroke-width: 0.8; cursor: pointer; transition: fill 0.35s; }
+  .country:hover { stroke: var(--ink); stroke-width: 1.2; }
+  .country.ref { stroke: var(--accent); stroke-width: 2.5; }
+  .country.loading { animation: pulse 1.2s ease-in-out infinite; }
+  @keyframes pulse { 50% { opacity: 0.55; } }
+  .label {
+    font-weight: 600; fill: var(--ink); text-anchor: middle; dominant-baseline: middle;
+    paint-order: stroke; stroke: var(--halo); stroke-width: 3px; stroke-linejoin: round;
+    pointer-events: none;
+  }
+  .region { stroke: var(--border); stroke-width: 1.5; cursor: pointer; }
+  aside { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 14px; align-self: start; }
+  aside h2 { font-size: 14px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin: 0 0 8px; }
+  .legend { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); margin-bottom: 12px; flex-wrap: wrap; }
+  .sw { width: 18px; height: 12px; border-radius: 3px; display: inline-block; }
+  #ref { font-size: 14px; margin: 0 0 10px; }
+  #ref b { color: var(--accent); }
+  ol#list { list-style: none; margin: 0; padding: 0; max-height: 62vh; overflow: auto; }
+  #list li { display: grid; grid-template-columns: 14px 1fr auto; gap: 8px; align-items: baseline; padding: 5px 2px; border-bottom: 1px solid var(--line); cursor: pointer; }
+  #list li:hover { background: var(--bg); }
+  #list .dot { width: 12px; height: 12px; border-radius: 3px; align-self: center; }
+  #list .w { font-weight: 600; overflow-wrap: anywhere; }
+  #list .lang { color: var(--muted); font-size: 12px; display: block; font-weight: 400; }
+  #list .pct { color: var(--muted); font-variant-numeric: tabular-nums; font-size: 13px; }
+  details { margin-top: 14px; font-size: 14px; }
+  details summary { cursor: pointer; color: var(--muted); }
+  details label { display: block; margin: 10px 0 4px; }
+  details input, details select { width: 100%; padding: 7px 9px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); font: inherit; }
+  details p { color: var(--muted); margin: 6px 0 0; font-size: 13px; }
+  #tip {
+    position: fixed; pointer-events: none; background: var(--panel); color: var(--ink);
+    border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; font-size: 13px;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.15); display: none; max-width: 260px; z-index: 5;
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>Europe Word Map</h1>
+  <p class="sub">Type an English word. See it in every European language, with countries whose words sound alike lit up together.</p>
+  <form class="search" id="search">
+    <input id="word" type="text" placeholder="e.g. word, water, school, milk" autocomplete="off" autofocus>
+    <button id="go" type="submit">Translate</button>
+  </form>
+  <div id="presets" class="presets" aria-label="Prepared words"><span class="rowlabel">Words</span></div>
+  <div id="stories" class="presets" aria-label="Words with a story"><span class="rowlabel">Stories</span></div>
+  <div id="friends" class="presets" aria-label="Polish–Slovak false friends"><span class="rowlabel">False friends PL / SK</span></div>
+  <p id="status"></p>
+  <p id="story" class="story" hidden></p>
+</header>
+<main>
+  <div class="mapwrap"><svg id="map" role="img" aria-label="Map of Europe"></svg></div>
+  <aside>
+    <h2>Similarity</h2>
+    <div class="legend">
+      <span class="sw" style="background:var(--land-lang)"></span>different
+      <span class="sw" style="background:var(--s1)"></span>
+      <span class="sw" style="background:var(--s2)"></span>
+      <span class="sw" style="background:var(--s3)"></span>
+      <span class="sw" style="background:var(--s4)"></span>same
+    </div>
+    <p id="ref"></p>
+    <ol id="list"></ol>
+    <details id="settings">
+      <summary>Translation settings</summary>
+      <label for="provider">Translate with</label>
+      <select id="provider">
+        <option value="mymemory">MyMemory (free, no key)</option>
+        <option value="claude">Claude (needs an Anthropic API key)</option>
+      </select>
+      <div id="claude-opts">
+        <label for="apikey">Anthropic API key</label>
+        <input id="apikey" type="password" placeholder="sk-ant-..." autocomplete="off">
+        <p>Better single-word translations and proper romanisation, in one request. The key stays in this browser and is sent only to api.anthropic.com.</p>
+      </div>
+      <div id="mm-opts">
+        <label for="mmemail">Email for MyMemory (optional)</label>
+        <input id="mmemail" type="email" placeholder="you@example.com">
+        <p>Anonymous use allows roughly 20 words a day; an email raises it about tenfold. Results are cached, so repeating a word is free.</p>
+      </div>
+    </details>
+  </aside>
+</main>
+<div id="tip"></div>
+<script src="languages.js"></script>
+<script src="similarity.js"></script>
+<script src="presets.js"></script>
+<script src="stories.js"></script>
+<script src="false-friends.js"></script>
+<script src="map-data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
