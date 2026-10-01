@@ -1,12 +1,12 @@
 # Europe Word Map
 
 Type an English word and see it translated into 43 European languages, written on a
-map of Europe. Countries whose words sound alike are coloured together: red for
-(nearly) the same word, orange for somewhat similar, pale for a faint resemblance,
-grey for unrelated.
+map of Europe. Countries whose words sound alike share a colour, one colour per
+group. Click a country to compare everything with it instead: red for (nearly) the
+same word, orange for somewhat similar, grey for unrelated.
 
 Type *word* and Poland (*słowo*), Czechia and Slovakia (*slovo*), and Russia and
-Ukraine (*слово*) all turn red together. Germany (*Wort*), the Netherlands (*woord*)
+Ukraine (*слово*) all share one colour. Germany (*Wort*), the Netherlands (*woord*)
 and England (*word*) form a second group.
 
 **Live:** https://gregaw.github.io/word-map/
@@ -70,12 +70,28 @@ Each result is cached in the browser, so repeating a word costs nothing.
 3. It folds spelling conventions to one sound: Polish *sz*, Czech *š* and German *sch*
    all become *sh*, *w* becomes *v*, and so on.
 
-The score is 1 − edit distance / length, with a small bonus when the words start the
-same way. Colour bands: 0.9 and above is red, 0.75 dark orange, 0.6 orange, 0.45 pale,
-and anything lower is grey.
+Then it compares the two words' sounds in two ways and keeps the higher score:
 
-Without a selected country, each language takes its best match with any *other*
-language on the map. That is why whole families light up together.
+- **Alignment by sound class.** Sounds are grouped into classes (t/d, k/g, p/b/f, s/z/sh,
+  vowels…), following Dolgopolsky's method for spotting related words. A sound changing
+  within its class costs little, and vowels cost least, since they drift most. So
+  *Thursday / Donnerstag* scores 0.60, and *noc / night* 0.62.
+- **The consonant skeleton.** This is the consonants in order, which survive when a
+  language drops a syllable: *czwartek* is cz-w-r-t-k and *четвер* is č-t-v-r. It counts
+  only when two words share at least three consonants, and then for at most 0.8.
+
+**Comparing with one country** (click it): colour bands are 0.9 and above red,
+0.75 dark orange, 0.6 orange, 0.45 pale, and lower grey.
+
+**No country selected:** the map shows **groups**, one colour each (blue, orange, green,
+yellow, …), and a language that sounds less like the rest of its group is paler.
+- Groups are found automatically by average-linkage clustering: the two groups whose
+  words are most alike on average keep merging while that average is at least 0.5. For
+  *king* this finds the Slavic *król*, Germanic *König* and Latin *roi* groups.
+- For *Thursday*, *Saturday* and *Christmas*, the words' origins matter more than their
+  sound, so their groups are curated by origin in `stories.js` and named on the map
+  ("Thor's day", "Jupiter's day", "the fourth day", "the fifth day").
+- The side panel lists each group with its members.
 
 ## Files
 

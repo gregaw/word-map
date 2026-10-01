@@ -172,6 +172,7 @@
   const PRESETS = {};
   const GROUPS = {};  // group name -> [query, ...], one row of buttons each
   const NOTES = {};   // query -> { text, ref }: the story told under the buttons, if any
+  const GROUPINGS = {}; // query -> [{ name, langs }]: curated groups by origin, if any
 
   function toWords(langs) {
     const out = {};
@@ -188,6 +189,7 @@
       const langs = entry.words || entry;
       PRESETS[query] = toWords(langs);
       if (entry.note) NOTES[query] = { text: entry.note, ref: entry.ref };
+      if (entry.groups) GROUPINGS[query] = entry.groups.map(([name, langs]) => ({ name, langs: langs.split(" ") }));
       GROUPS[name].push(query);
     }
   }
@@ -197,10 +199,10 @@
   function findPreset(query) {
     const q = String(query).trim().toLowerCase();
     const key = Object.keys(PRESETS).find((k) => k.toLowerCase() === q);
-    return key ? { query: key, words: PRESETS[key], note: NOTES[key] } : null;
+    return key ? { query: key, words: PRESETS[key], note: NOTES[key], groups: GROUPINGS[key] } : null;
   }
 
-  const api = { PRESETS, GROUPS, NOTES, addGroup, findPreset };
+  const api = { PRESETS, GROUPS, NOTES, GROUPINGS, addGroup, findPreset };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.EuropePresets = api;
 })(typeof window !== "undefined" ? window : globalThis);

@@ -21,6 +21,9 @@
     --s2: #f8b267;
     --s3: #ee7a32;
     --s4: #d7301f;
+    /* Group colours (no country selected): a validated categorical order. */
+    --g1: #2a78d6; --g2: #eb6834; --g3: #1baf7a; --g4: #eda100;
+    --g5: #e87ba4; --g6: #008300; --g7: #4a3aa7; --g8: #e34948;
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
@@ -28,6 +31,8 @@
       --line: #33373e; --sea: #1b2530; --land: #2a2d33; --land-lang: #3a3e45;
       --border: #16181c; --accent: #7aa7ec; --halo: rgba(22, 24, 28, 0.9);
       --s1: #6b4a22; --s2: #a4602a; --s3: #d0702f; --s4: #ef4a36;
+      --g1: #3987e5; --g2: #d95926; --g3: #199e70; --g4: #c98500;
+      --g5: #d55181; --g6: #008300; --g7: #9085e9; --g8: #e66767;
     }
   }
   * { box-sizing: border-box; }
@@ -55,6 +60,10 @@
   #stories button.chip { border-color: var(--s2); }
   .story { margin: 4px 0 0; padding: 10px 14px; border-left: 3px solid var(--s3); background: var(--panel); border-radius: 0 10px 10px 0; max-width: 900px; }
   #friends button.chip { border-style: dashed; }
+  #list li.group { cursor: default; display: flex; gap: 8px; align-items: center; padding: 10px 2px 4px; border-bottom: 0; font-weight: 600; }
+  #list li.group:hover { background: none; }
+  #list li.group .gname { font-size: 13px; }
+  #list li.group .gcount { color: var(--muted); font-weight: 400; font-size: 12px; }
   #list li.friend { cursor: default; padding: 10px 2px; }
   #list .means { display: block; font-weight: 500; margin: 2px 0; }
   button.chip { padding: 5px 12px; border-radius: 999px; font-weight: 500; background: var(--panel); color: var(--ink); border: 1px solid var(--line); }
@@ -124,7 +133,7 @@
   <div class="mapwrap"><svg id="map" role="img" aria-label="Map of Europe"></svg></div>
   <aside>
     <h2>Similarity</h2>
-    <div class="legend">
+    <div class="legend" id="legend">
       <span class="sw" style="background:var(--land-lang)"></span>different
       <span class="sw" style="background:var(--s1)"></span>
       <span class="sw" style="background:var(--s2)"></span>

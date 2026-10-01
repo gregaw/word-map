@@ -149,3 +149,67 @@ test("stories: the groups each caption describes come out alike on the map", () 
   alike("tomato", "pl", "it", 0.75); alike("potato", "de", "ru", 0.95); alike("turkey", "nl", "da", 0.75);
   alike("Thursday", "cs", "hu", 0.65); alike("Christmas", "sv", "fi", 0.6);
 });
+
+test("sound classes: related words that drifted apart still score as related", () => {
+  const { similarity } = require("../similarity.js");
+  assert.ok(similarity("czwartek", "четвер") >= 0.5, "czwartek / четвер");
+  assert.ok(similarity("czwartek", "четверг") >= 0.6, "czwartek / четверг");
+  assert.ok(similarity("jeudi", "jovedi") >= 0.6, "jeudi / giovedì");
+  assert.ok(similarity("Thursday", "Donnerstag") >= 0.55, "Thursday / Donnerstag");
+  assert.ok(similarity("noc", "night") >= 0.55, "noc / night");
+  // ...without making unrelated words alike.
+  assert.ok(similarity("mot", "parola") < 0.2);
+  assert.equal(similarity("dom", "house"), 0);
+  assert.ok(similarity("puhelin", "telephone") < 0.45);
+  assert.equal(similarity("hleb", "pain"), 0);
+});
+
+test("clusters: Thursday splits into Slavic and Germanic groups; groups are scored", () => {
+  const { PRESETS } = require("../presets.js");
+  require("../stories.js");
+  const { clusters } = require("../similarity.js");
+  const found = clusters(PRESETS.Thursday);
+  const groupOf = (l) => found.findIndex((g) => g.langs.includes(l));
+  for (const l of ["uk", "ru", "cs", "sk", "hr", "bg"]) assert.equal(groupOf(l), groupOf("pl"), l);
+  for (const l of ["de", "nl", "sv", "da", "fi"]) assert.equal(groupOf(l), groupOf("en"), l);
+  assert.notEqual(groupOf("pl"), groupOf("en"));
+  assert.ok(found.every((g) => g.langs.length > 1));
+  assert.ok(found[0].langs.length >= found[found.length - 1].langs.length, "largest first");
+  for (const g of found) for (const l of g.langs) assert.ok(g.strength[l] > 0 && g.strength[l] <= 1);
+});
+
+test("clusters: king finds the three families", () => {
+  const { PRESETS } = require("../presets.js");
+  require("../stories.js");
+  const { clusters } = require("../similarity.js");
+  const found = clusters(PRESETS.king);
+  const groupOf = (l) => found.findIndex((g) => g.langs.includes(l));
+  assert.equal(groupOf("ru"), groupOf("pl"));
+  assert.equal(groupOf("tr"), groupOf("pl"), "kral comes from the Slavs");
+  assert.equal(groupOf("de"), groupOf("en"));
+  assert.equal(groupOf("es"), groupOf("fr"));
+  assert.equal(new Set([groupOf("pl"), groupOf("en"), groupOf("fr")]).size, 3);
+});
+
+test("clusters with fixed groups only scores them", () => {
+  const { clusters } = require("../similarity.js");
+  const words = { pl: { word: "czwartek" }, uk: { word: "четвер" }, en: { word: "Thursday" }, de: { word: "Donnerstag" } };
+  const out = clusters(words, 0.5, [["pl", "uk", "xx"], ["en"]]);
+  assert.deepEqual(out.map((g) => g.langs), [["pl", "uk"]], "unknown languages and singletons drop out");
+  assert.ok(out[0].strength.pl >= 0.5);
+});
+
+test("curated groups by origin: real languages, each in at most one group", () => {
+  const { GROUPINGS, findPreset } = require("../presets.js");
+  require("../stories.js");
+  assert.deepEqual(Object.keys(GROUPINGS), ["Thursday", "Saturday", "Christmas"]);
+  for (const [q, groups] of Object.entries(GROUPINGS)) {
+    assert.ok(groups.length <= 8, `${q}: one colour per group`);
+    const all = groups.flatMap((g) => g.langs);
+    assert.equal(new Set(all).size, all.length, `${q}: no language twice`);
+    for (const l of all) assert.ok(LANGUAGES[l], `${q}: ${l}`);
+    for (const g of groups) assert.ok(g.name && g.langs.length > 1, `${q}: ${g.name}`);
+  }
+  assert.equal(findPreset("thursday").groups, GROUPINGS.Thursday);
+  assert.equal(findPreset("king").groups, undefined);
+});

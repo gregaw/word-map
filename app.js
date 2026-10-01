@@ -2,7 +2,7 @@
   "use strict";
 
   const { LANGUAGES, COUNTRIES, REGIONS } = window.EuropeLanguages;
-  const { scoreAll } = window.WordSimilarity;
+  const { scoreAll, clusters } = window.WordSimilarity;
   const MAP = window.EuropeMap;
   const SVG_NS = "http://www.w3.org/2000/svg";
   const CLAUDE_MODEL = "claude-opus-5-5";
@@ -24,6 +24,7 @@
     pending: new Set(),
     ref: null,     // reference language, or null for "best match with any"
     friend: null,  // a false-friend pair being shown, instead of a translation
+    groupings: null, // curated groups by origin for the current word, if it has them
     run: 0,        // ignores results from a search that has since been replaced
   };
 
@@ -123,6 +124,43 @@
     return small.includes(name) ? 9 : ["Russia", "France", "Spain", "Germany", "Poland", "Ukraine", "Turkey", "Sweden", "Norway", "Italy", "Finland"].includes(name) ? 15 : 12;
   }
 
+  // Mix two #rrggbb colours: t = 0 gives a, t = 1 gives b.
+  function mix(a, b, t) {
+    const rgb = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
+    const [x, y] = [rgb(a), rgb(b)];
+    return "#" + x.map((v, i) => Math.round(v + (y[i] - v) * t).toString(16).padStart(2, "0")).join("");
+  }
+
+  // With no country selected, the map shows groups of alike words, one colour
+  // each: curated groups by origin where the word has them, otherwise clusters
+  // found from the sound of the words. Within a group, a language that sounds
+  // less like the rest is paler. Returns { groups, byLang: { lang: group } }.
+  const GROUP_COLOURS = 8;
+  function grouping() {
+    const curated = state.groupings;
+    const found = clusters(state.words, undefined, curated && curated.map((g) => g.langs));
+    const groups = found.map((g, i) => {
+      const name = curated
+        ? curated.find((c) => c.langs.includes(g.langs[0])).name
+        : null;
+      // Name a found group after its most typical word.
+      const centre = g.langs.reduce((a, b) => (g.strength[b] > g.strength[a] ? b : a));
+      const base = i < GROUP_COLOURS ? css(`--g${i + 1}`) : null;
+      const shade = (l) => (base ? mix(base, css("--land-lang"), Math.min(0.45, Math.max(0, (0.9 - g.strength[l]) * 0.7))) : null);
+      return { ...g, name: name || `like “${state.words[centre].word}”`, base, shade };
+    });
+    const byLang = {};
+    for (const g of groups) for (const l of g.langs) byLang[l] = g;
+    return { groups, byLang };
+  }
+  // A country is coloured by its first language that belongs to a group.
+  const groupedLang = (langs, byLang) => langs.find((l) => byLang[l]) || langs[0];
+
+  // The legend's two forms; both are fixed markup, never built from translations.
+  const SCALE_LEGEND = $("legend").innerHTML;
+  const GROUP_LEGEND = [1, 2, 3, 4].map((i) => `<span class="sw" style="background:var(--g${i})"></span>`).join("") +
+    " one colour per group · paler = looser fit";
+
   const FULL_VIEW = `0 0 ${MAP.width} ${MAP.height}`;
 
   // Zoom onto the countries of a false-friend pair; labels keep a readable size.
@@ -153,10 +191,17 @@
     if (compare) compare.hidden = state.ref === compare.dataset.ref;
     zoomTo(null);
     const scores = scoreAll(state.words, state.ref);
+    const grouped = state.query && !state.ref ? grouping() : null;
+    $("legend").innerHTML = grouped ? GROUP_LEGEND : SCALE_LEGEND;
     for (const c of COUNTRIES) {
       const best = Math.max(...c.langs.map((l) => scores[l] ?? -1));
       const p = shapes[c.name];
-      p.style.fill = colour(best) || "";
+      if (grouped) {
+        const l = groupedLang(c.langs, grouped.byLang);
+        p.style.fill = grouped.byLang[l]?.shade(l) || "";
+      } else {
+        p.style.fill = colour(best) || "";
+      }
       p.classList.toggle("ref", !!state.ref && c.langs[0] === state.ref);
       p.classList.toggle("loading", c.langs.some((l) => state.pending.has(l)));
       const w = state.words[c.langs[0]];
@@ -169,14 +214,14 @@
     }
     for (const r of REGIONS) {
       dots[r.name].style.display = "";
-      dots[r.name].style.fill = colour(scores[r.lang]) || css("--muted");
+      dots[r.name].style.fill = (grouped ? grouped.byLang[r.lang]?.shade(r.lang) : colour(scores[r.lang])) || css("--muted");
       dots[r.name].style.stroke = state.ref === r.lang ? css("--accent") : "";
       const w = state.words[r.lang];
       const t = labels["region:" + r.name];
       t.textContent = w ? w.word : "";
       t.setAttribute("font-size", 10);
     }
-    renderList(scores);
+    renderList(scores, grouped);
   }
 
   // First part of a meaning, short enough to sit under the word on the map.
@@ -257,6 +302,7 @@
     story(null);
     state.run++; // drop any translation still in flight
     state.friend = pair;
+    state.groupings = null;
     state.ref = null;
     state.pending.clear();
     state.query = `${pair.pl.word} / ${pair.sk.word}`;
@@ -267,7 +313,7 @@
     render();
   }
 
-  function renderList(scores) {
+  function renderList(scores, grouped) {
     const ref = $("ref");
     ref.replaceChildren();
     if (!state.query) {
@@ -283,34 +329,69 @@
       clear.textContent = "Show all groups";
       clear.addEventListener("click", () => setRef(null));
       ref.append(clear);
+    } else if (state.groupings) {
+      ref.textContent = "Colours show groups by the origin of the word. Paler means it sounds less like the rest of its group. Click a country to compare against it.";
     } else {
-      ref.textContent = "Each language is coloured by its closest match anywhere on the map. Click a country to compare against it.";
+      ref.textContent = "Colours show groups of alike-sounding words, found automatically. Paler means a looser fit. Click a country to compare against it.";
     }
 
     const list = $("list");
     const langs = ALL_LANGS.filter((l) => state.words[l] || state.pending.has(l));
+    if (grouped) {
+      const rows = [];
+      const header = (swatch, name, count) => {
+        const li = document.createElement("li");
+        li.className = "group";
+        const dot = document.createElement("span");
+        dot.className = "dot";
+        dot.style.background = swatch;
+        const n = document.createElement("span");
+        n.className = "gname";
+        n.textContent = name;
+        const c = document.createElement("span");
+        c.className = "gcount";
+        c.textContent = count;
+        li.append(dot, n, c);
+        return li;
+      };
+      for (const g of grouped.groups) {
+        rows.push(header(g.base || css("--land-lang"), g.name, `${g.langs.length} languages`));
+        const members = [...g.langs].sort((a, b) => g.strength[b] - g.strength[a]);
+        for (const l of members) rows.push(langRow(l, g.shade(l) || css("--land-lang"), Math.round(g.strength[l] * 100) + "%"));
+      }
+      const rest = langs.filter((l) => !grouped.byLang[l]);
+      if (rest.length) {
+        rows.push(header(css("--land-lang"), "Not in a group", `${rest.length} languages`));
+        for (const l of rest) rows.push(langRow(l, css("--land-lang"), ""));
+      }
+      list.replaceChildren(...rows);
+      return;
+    }
     langs.sort((a, b) => (scores[b] ?? -1) - (scores[a] ?? -1) || LANGUAGES[a][0].localeCompare(LANGUAGES[b][0]));
-    list.replaceChildren(...langs.map((l) => {
-      const li = document.createElement("li");
-      const dot = document.createElement("span");
-      dot.className = "dot";
-      dot.style.background = colour(scores[l]) || css("--land-lang");
-      const w = document.createElement("span");
-      w.className = "w";
-      const entry = state.words[l];
-      w.textContent = entry ? entry.word : "…";
-      if (entry && entry.latin && entry.latin !== entry.word) w.textContent += ` · ${entry.latin}`;
-      const lang = document.createElement("span");
-      lang.className = "lang";
-      lang.textContent = `${LANGUAGES[l][0]} — ${LANGUAGES[l][1]}`;
-      w.appendChild(lang);
-      const pct = document.createElement("span");
-      pct.className = "pct";
-      pct.textContent = scores[l] != null ? Math.round(scores[l] * 100) + "%" : "";
-      li.append(dot, w, pct);
-      li.addEventListener("click", () => setRef(l));
-      return li;
-    }));
+    list.replaceChildren(...langs.map((l) => langRow(l, colour(scores[l]) || css("--land-lang"), scores[l] != null ? Math.round(scores[l] * 100) + "%" : "")));
+  }
+
+  // One language in the side list: its word, its name, and a number.
+  function langRow(l, dotColour, number) {
+    const li = document.createElement("li");
+    const dot = document.createElement("span");
+    dot.className = "dot";
+    dot.style.background = dotColour;
+    const w = document.createElement("span");
+    w.className = "w";
+    const entry = state.words[l];
+    w.textContent = entry ? entry.word : "…";
+    if (entry && entry.latin && entry.latin !== entry.word) w.textContent += ` · ${entry.latin}`;
+    const lang = document.createElement("span");
+    lang.className = "lang";
+    lang.textContent = `${LANGUAGES[l][0]} — ${LANGUAGES[l][1]}`;
+    w.appendChild(lang);
+    const pct = document.createElement("span");
+    pct.className = "pct";
+    pct.textContent = number;
+    li.append(dot, w, pct);
+    li.addEventListener("click", () => setRef(l));
+    return li;
   }
 
   function setRef(lang) {
@@ -435,6 +516,7 @@
     if (!word) return;
     const run = ++state.run;
     state.friend = null;
+    state.groupings = null;
     story(null);
     $("list").scrollTop = 0;
     const provider = $("provider").value;
@@ -446,6 +528,7 @@
     const preset = window.EuropePresets.findPreset(word);
     if (preset) {
       state.query = preset.query;
+      state.groupings = preset.groups || null;
       state.words = { ...preset.words };
       state.pending.clear();
       render();

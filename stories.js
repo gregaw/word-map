@@ -2,12 +2,20 @@
 // Slavic, and the ones that crossed between them. Same format as presets.js
 // (word, or [word, romanisation]); `note` is shown under the buttons when the
 // word is on the map, with a button to compare against `ref`, the language
-// whose view tells the story best. Loaded after presets.js, which it extends.
+// whose view tells the story best. `groups` (optional) are named groups by
+// origin, shown instead of the automatic sound clusters when no country is selected. Loaded after presets.js, which it extends.
 (function (root) {
   "use strict";
 
   const STORIES = {
     Thursday: {
+      // Grouped by the origin of the word, which sound alone cannot recover here.
+      groups: [
+        ["Thor's day", "en de nl lb da no sv fo fi"],
+        ["Jupiter's day", "fr it es ca gl ro cy"],
+        ["the fourth day", "pl cs sk ru uk be bg sr hr bs mk sl hu lv lt et"],
+        ["the fifth day", "pt el tr hy ka is mt"],
+      ],
       ref: "fr",
       note: "Latin countries named it after Jupiter (jeudi, giovedì, jueves), Germanic ones after Thor (Thursday, Donnerstag, torsdag). Slavs simply count: the fourth day (czwartek, четверг, čtvrtek), and Hungarian csütörtök is borrowed from them. Portuguese quinta-feira and Greek Πέμπτη count too: the fifth day, counting from Sunday.",
       words: {
@@ -15,9 +23,9 @@
         eu: "osteguna", be: ["чацвер", "chatsver"], bs: "četvrtak",
         bg: ["четвъртък", "chetvartak"], ca: "dijous", hr: "četvrtak", cs: "čtvrtek",
         da: "torsdag", nl: "donderdag", en: "Thursday", et: "neljapäev", fo: "hósdagur",
-        fi: "torstai", fr: "jeudi", gl: "xoves", ka: ["ხუთშაბათი", "khutshabati"],
+        fi: "torstai", fr: "jeudi", gl: ["xoves", "shoves"], ka: ["ხუთშაბათი", "khutshabati"],
         de: "Donnerstag", el: ["Πέμπτη", "pempti"], hu: ["csütörtök", "chütörtök"], is: "fimmtudagur",
-        ga: "Déardaoin", it: "giovedì", lv: "ceturtdiena", lt: "ketvirtadienis",
+        ga: "Déardaoin", it: ["giovedì", "jovedi"], lv: "ceturtdiena", lt: "ketvirtadienis",
         lb: "Donneschdeg", mk: ["четврток", "chetvrtok"], mt: ["il-Ħamis", "Hamis"],
         no: "torsdag", pl: "czwartek", pt: "quinta-feira", ro: "joi",
         ru: ["четверг", "chetverg"], sr: ["четвртак", "četvrtak"], sk: "štvrtok",
@@ -26,6 +34,13 @@
       },
     },
     Saturday: {
+      // Grouped by the origin of the word, which sound alone cannot recover here.
+      groups: [
+        ["Sabbath", "pl cs sk ru uk be bg sr hr bs mk sl hu it es pt gl ca fr ro de lb el hy ka mt az"],
+        ["Saturn's day", "en nl ga cy sq"],
+        ["washing day", "sv da no is fo fi et"],
+        ["the sixth day", "lv lt"],
+      ],
       ref: "pl",
       note: "Most of Europe kept the Hebrew Sabbath: sobota, суббота, sábado, sabato, samedi, Samstag, szombat. English Saturday and Dutch zaterdag kept the Roman god Saturn. Swedish lördag and Finnish lauantai mean 'washing day'.",
       words: {
@@ -42,6 +57,17 @@
       },
     },
     Christmas: {
+      // Grouped by the origin of the word, which sound alone cannot recover here.
+      groups: [
+        ["birth (Latin natalis)", "fr it es pt ca gl cy ga tr"],
+        ["birth (Slavic)", "pl ru uk"],
+        ["Božić, 'little god'", "hr bs sr sl mk"],
+        ["Yule", "sv da no is fo fi et"],
+        ["Roman calendae", "lt bg be"],
+        ["from Weihnachten", "de cs sk"],
+        ["Christ's …", "en nl lb sq el"],
+        ["kračun", "ro hu"],
+      ],
       ref: "it",
       note: "Latin and Celtic countries say 'birth' (Noël, Natale, Navidad, Nadolig, Nollaig), and so do Poles and Russians (Boże Narodzenie, Рождество). The North kept the pagan Yule (jul, joulu, jól). Czech Vánoce and Slovak Vianoce come from German Weihnachten; Lithuanian Kalėdos, Bulgarian Коледа and Belarusian Каляды from the Roman calendae.",
       words: {
