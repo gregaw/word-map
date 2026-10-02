@@ -247,6 +247,16 @@ test("the Christmas worked example in the help panel stays true", () => {
   const ru = PRESETS.Christmas.ru;
   assert.ok(similarity(PRESETS.Christmas.pl.word, ru.latin) < SETTINGS.clusterThreshold);
   assert.match(html, /data-a="Boże Narodzenie" data-b="Rozhdestvo"/);
+  // ...and, as the panel says, sound alone puts Polish with Croatian Božić and
+  // Russian with Ukrainian and English, apart from each other.
+  const { clusters } = require("../similarity.js");
+  const bySound = clusters(PRESETS.Christmas);
+  const groupOf = (l) => bySound.findIndex((g) => g.langs.includes(l));
+  assert.equal(groupOf("pl"), groupOf("hr"), "Boże Narodzenie with Božić");
+  assert.equal(groupOf("ru"), groupOf("uk"));
+  assert.equal(groupOf("ru"), groupOf("en"), "Рождество with Christmas");
+  assert.notEqual(groupOf("pl"), groupOf("ru"));
+  assert.match(html, /data-show="Christmas" data-mode="sound"/);
   // Every "Show X on the map" button names a prepared word.
   const shows = [...html.matchAll(/data-show="([^"]+)"/g)].map((m) => m[1]);
   assert.ok(shows.length > 0);

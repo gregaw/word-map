@@ -94,9 +94,13 @@ yellow, …), and a language that sounds less like the rest of its group is pale
 - For *Thursday*, *Saturday* and *Christmas*, the words' origins matter more than their
   sound, so their groups are curated by origin in `stories.js` and named on the map
   ("Thor's day", "Jupiter's day", "the fourth day", "the fifth day").
-  The **?** panel works through *Christmas* as an example. Polish *Boże Narodzenie* and
-  Russian *Рождество* share the Slavic root *rod-* ("birth") and so share a group,
-  though by sound they score only about 22%.
+  These groups are written by hand, not found by the algorithm. On those three maps a
+  switch above the side list shows the algorithm's own groups for comparison. The **?**
+  panel works through *Christmas*:
+  - Polish *Boże Narodzenie* and Russian *Рождество* share the Slavic root *rod-*
+    ("birth"), so the hand-written groups put them together.
+  - By sound they score only about 22%. Sound alone puts Polish with Croatian *Božić*
+    (both start with "God") and Russian with English *Christmas*.
 - The side panel lists each group with its members.
 
 ## Files

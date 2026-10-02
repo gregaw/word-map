@@ -56,13 +56,14 @@
   button.help { width: 46px; padding: 10px 0; font-size: 20px; font-weight: 700; border-radius: 50%; }
   dialog#howto { border: 1px solid var(--line); border-radius: 14px; padding: 0; max-width: 680px; width: calc(100% - 32px); max-height: calc(100% - 48px); background: var(--panel); color: var(--ink); }
   dialog#howto::backdrop { background: rgba(0, 0, 0, 0.45); }
-  #howto .body { padding: 20px 24px 22px; font-size: 15px; }
+  #howto .body { padding: 6px 24px 22px; font-size: 15px; }
   #howto h2 { margin: 0 0 4px; font-size: 20px; }
   #howto h3 { margin: 18px 0 6px; font-size: 15px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
   #howto p, #howto li { margin: 6px 0; }
   #howto ol, #howto ul { padding-left: 22px; margin: 6px 0; }
   #howto .ex { font-variant-numeric: tabular-nums; white-space: nowrap; font-weight: 600; }
-  #howto .close { position: sticky; top: 0; float: right; margin: 12px 12px 0 0; padding: 4px 12px; }
+  #howto .bar { position: sticky; top: 0; display: flex; justify-content: flex-end; padding: 10px 12px 6px; background: var(--panel); border-bottom: 1px solid var(--line); }
+  #howto .bar button { padding: 4px 12px; }
   button:disabled { opacity: 0.5; cursor: default; }
   .presets { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
   .rowlabel { font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); align-self: center; }
@@ -175,7 +176,7 @@
 </main>
 <div id="tip"></div>
 <dialog id="howto" aria-labelledby="howto-title">
-  <button id="howto-close" class="ghost close" type="button">Close</button>
+  <div class="bar"><button id="howto-close" class="ghost" type="button">Close</button></div>
   <div class="body">
     <h2 id="howto-title">How it works</h2>
     <p>Every word is translated into 43 languages. The page then measures how alike the
@@ -232,30 +233,45 @@
       sound. The Latin <i>jeudi</i>, <i>giovedì</i> and <i>jueves</i> (all "Jupiter's day")
       have drifted too far apart for any sound measure to group them without also merging the
       Slavic and Germanic groups. So their groups are set by hand from the words' origins and
-      named in the side panel: "Thor's day", "Jupiter's day", "the fourth day" and so on.</p>
+      named in the side panel: "Thor's day", "Jupiter's day", "the fourth day" and so on.
+      These groups are not computed. On those three maps, a switch above the side list
+      shows the algorithm's own groups instead.</p>
 
     <h3>Worked example: Christmas</h3>
-    <p>Polish <i>Boże Narodzenie</i> and Russian <i>Рождество</i> share a group, though by
-      sound alone they score only <span class="ex" data-a="Boże Narodzenie" data-b="Rozhdestvo"></span>.
-      They are related by origin, not by sound: both are built on the Slavic root
-      <i>rod-</i>, "to give birth". Polish <i>na-<b>rodz</b>-enie</i> means "birth", and
-      <i>Boże</i> adds "God's". Russian <i><b>рожд</b>-ество</i> (rozhd-estvo) comes through
-      Church Slavonic. Three things hide the shared root: the prefix <i>na-</i>, the extra
-      word <i>Boże</i>, and a regular sound change, where Polish has <i>dz</i> and Russian
-      has <i>žd</i> (<i>rodzić</i> / <i>рождать</i>).</p>
-    <p>The same holds across the map:</p>
+    <p>On the Christmas map, Polish <i>Boże Narodzenie</i> and Russian <i>Рождество</i>
+      share one colour. <b>The algorithm did not put them there.</b> By sound they score
+      only <span class="ex" data-a="Boże Narodzenie" data-b="Rozhdestvo"></span>, far
+      below the <span data-value="clusterThreshold"></span> the clustering needs.</p>
+    <p>For Christmas, Thursday and Saturday, the groups are <b>written by hand</b> in the
+      page's data (<code>stories.js</code>): a list of which languages' words share an
+      origin, taken from their known history. On those maps the algorithm does only two
+      things. It scores how alike each word sounds to the rest of its hand-made group,
+      which sets how pale it is (Poland is the palest in its group). And it compares
+      words when you click a country.</p>
+    <p><b>Left to sound alone</b>, the clustering groups Christmas differently, and
+      wrongly:</p>
     <ul>
-      <li>French <i>Noël</i>, Italian <i>Natale</i>, Welsh <i>Nadolig</i> and Irish
-        <i>Nollaig</i> all come from Latin <i>natalis</i>, "birth".</li>
-      <li>Czech <i>Vánoce</i> and Slovak <i>Vianoce</i> were borrowed from German
-        <i>Weihnachten</i>.</li>
-      <li>Lithuanian <i>Kalėdos</i>, Bulgarian <i>Коледа</i> and Belarusian <i>Каляды</i>
-        come from the Roman <i>calendae</i>.</li>
+      <li>Polish <i>Boże Narodzenie</i> joins Croatian <i>Božić</i>. Both start with "God"
+        (<i>Boże</i>, <i>Bog</i>), a real shared word but the wrong half of the Polish
+        name.</li>
+      <li>Russian <i>Рождество</i> and Ukrainian <i>Різдво</i>
+        (<span class="ex" data-a="Rizdvo" data-b="Rozhdestvo"></span>) join English
+        <i>Christmas</i> and Dutch <i>Kerstmis</i>, by a chance likeness of consonants.</li>
     </ul>
-    <p>Some of these still sound alike (<span class="ex" data-a="Kalėdos" data-b="Koleda"></span>),
-      others barely do. Sound measures what you hear; origin takes history. That is why
-      Christmas, Thursday and Saturday use groups set by hand.</p>
-    <p><button type="button" class="ghost" data-show="Christmas">Show Christmas on the map</button></p>
+    <p>So Poland and Russia end up in different groups. Sound cannot know that Polish
+      <i>na-<b>rodz</b>-enie</i> ("birth") and Russian <i><b>рожд</b>-ество</i> are the same
+      Slavic root, <i>rod-</i>, "to give birth". The root is hidden by the prefix
+      <i>na-</i>, the extra word <i>Boże</i> ("God's"), and a regular sound change: Polish
+      has <i>dz</i> where Russian has <i>žd</i> (<i>rodzić</i> / <i>рождать</i>). That
+      knowledge comes from historical linguistics, not from the map.</p>
+    <p>Elsewhere the history and the sound agree: French <i>Noël</i>, Italian
+      <i>Natale</i> and Welsh <i>Nadolig</i> (Latin <i>natalis</i>), or Lithuanian
+      <i>Kalėdos</i> and Bulgarian <i>Коледа</i>
+      (<span class="ex" data-a="Kalėdos" data-b="Koleda"></span>, Roman
+      <i>calendae</i>).</p>
+    <p>Compare the two for yourself:
+      <button type="button" class="ghost" data-show="Christmas">Christmas, grouped by origin</button>
+      <button type="button" class="ghost" data-show="Christmas" data-mode="sound">Christmas, grouped by sound</button></p>
 
     <h3>Limits</h3>
     <p>Sounding alike is not the same as being related. <span class="ex" data-a="kissa" data-b="cat"></span>

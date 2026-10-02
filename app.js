@@ -25,6 +25,7 @@
     ref: null,     // reference language, or null for "best match with any"
     friend: null,  // a false-friend pair being shown, instead of a translation
     groupings: null, // curated groups by origin for the current word, if it has them
+    bySound: false,  // show the clustering's own groups even where curated ones exist
     run: 0,        // ignores results from a search that has since been replaced
   };
 
@@ -137,7 +138,7 @@
   // less like the rest is paler. Returns { groups, byLang: { lang: group } }.
   const GROUP_COLOURS = 8;
   function grouping() {
-    const curated = state.groupings;
+    const curated = state.bySound ? null : state.groupings;
     const found = clusters(state.words, undefined, curated && curated.map((g) => g.langs));
     const groups = found.map((g, i) => {
       const name = curated
@@ -303,6 +304,7 @@
     state.run++; // drop any translation still in flight
     state.friend = pair;
     state.groupings = null;
+    state.bySound = false;
     state.ref = null;
     state.pending.clear();
     state.query = `${pair.pl.word} / ${pair.sk.word}`;
@@ -330,7 +332,17 @@
       clear.addEventListener("click", () => setRef(null));
       ref.append(clear);
     } else if (state.groupings) {
-      ref.textContent = "Colours show groups by the origin of the word. Paler means it sounds less like the rest of its group. Click a country to compare against it.";
+      // This word has hand-written groups by origin; let the viewer compare
+      // them with what the clustering finds from sound alone.
+      ref.append(state.bySound
+        ? "Colours show groups found from sound alone, by the clustering. "
+        : "Colours show groups by the origin of the word, written by hand, not found by the algorithm. ");
+      const flip = document.createElement("button");
+      flip.className = "ghost";
+      flip.style.padding = "2px 8px";
+      flip.textContent = state.bySound ? "Group by origin" : "Group by sound instead";
+      flip.addEventListener("click", () => { state.bySound = !state.bySound; render(); });
+      ref.append(flip);
     } else {
       ref.textContent = "Colours show groups of alike-sounding words, found automatically. Paler means a looser fit. Click a country to compare against it.";
     }
@@ -517,6 +529,7 @@
     const run = ++state.run;
     state.friend = null;
     state.groupings = null;
+    state.bySound = false;
     story(null);
     $("list").scrollTop = 0;
     const provider = $("provider").value;
@@ -660,7 +673,9 @@
         dialog.close();
         state.ref = null;
         $("word").value = el.dataset.show;
-        search(el.dataset.show);
+        search(el.dataset.show); // prepared words show at once, before it returns
+        state.bySound = el.dataset.mode === "sound";
+        render();
       });
     }
     $("help").addEventListener("click", () => dialog.showModal());
