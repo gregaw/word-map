@@ -60,6 +60,7 @@
   #howto h2 { margin: 0 0 4px; font-size: 20px; }
   #howto h3 { margin: 18px 0 6px; font-size: 15px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
   #howto p, #howto li { margin: 6px 0; }
+  #howto .disclaimer { margin: 10px 0 14px; padding: 10px 14px; border-left: 3px solid var(--s3); background: var(--bg); border-radius: 0 8px 8px 0; }
   #howto ol, #howto ul { padding-left: 22px; margin: 6px 0; }
   #howto .ex { font-variant-numeric: tabular-nums; white-space: nowrap; font-weight: 600; }
   #howto .bar { position: sticky; top: 0; display: flex; justify-content: flex-end; padding: 10px 12px 6px; background: var(--panel); border-bottom: 1px solid var(--line); }
@@ -179,6 +180,11 @@
   <div class="bar"><button id="howto-close" class="ghost" type="button">Close</button></div>
   <div class="body">
     <h2 id="howto-title">How it works</h2>
+    <p class="disclaimer"><b>Just for fun.</b> This is a hobby project, not linguistic
+      research. It was built by Claude, an AI, guided step by step by a human, to find a
+      simple clustering of Europe's languages that is pleasing to look at and good for
+      conversation. The measures and groups below are rough rules of thumb, and the
+      translations and word histories may contain mistakes.</p>
     <p>Every word is translated into 43 languages. The page then measures how alike the
       words <em>sound</em> and colours the map from that.</p>
 

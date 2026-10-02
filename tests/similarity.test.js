@@ -262,3 +262,10 @@ test("the Christmas worked example in the help panel stays true", () => {
   assert.ok(shows.length > 0);
   for (const w of shows) assert.ok(findPreset(w), w);
 });
+
+test("the How it works panel opens with the just-for-fun disclaimer", () => {
+  const html = require("node:fs").readFileSync(require("node:path").join(__dirname, "..", "index.html"), "utf8");
+  const panel = html.slice(html.indexOf('id="howto-title"'));
+  const first = panel.indexOf("<p");
+  assert.ok(panel.slice(first, first + 200).includes("Just for fun"), "disclaimer is the first paragraph");
+});
