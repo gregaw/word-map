@@ -295,8 +295,12 @@ test("the words themselves are kept out of machine translation", () => {
 });
 
 test("the map starts with groups by sound; origin groups only on request", () => {
-  const app = require("node:fs").readFileSync(require("node:path").join(__dirname, "..", "app.js"), "utf8");
-  assert.match(app, /bySound: true,/, "default state");
-  assert.ok(!/state\.bySound = false;/.test(app), "nothing resets to origin by itself");
-  assert.match(app, /state\.bySound = el\.dataset\.mode !== "origin"/, "panel buttons default to sound");
+  const fs = require("node:fs"), path = require("node:path");
+  const app = fs.readFileSync(path.join(__dirname, "..", "app.js"), "utf8");
+  const html = fs.readFileSync(path.join(__dirname, "..", "index.html"), "utf8");
+  assert.match(app, /groupMode: "sound",/, "default on every visit");
+  // Only the switch (and the panel's buttons) change it; new words keep it.
+  assert.equal((app.match(/state\.groupMode = /g) || []).length, 1, "set in one place");
+  assert.match(html, /data-mode="sound" aria-pressed="true">By sound/);
+  assert.match(html, /data-mode="origin" aria-pressed="false"/);
 });

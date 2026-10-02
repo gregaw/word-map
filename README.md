@@ -101,8 +101,10 @@ yellow, …), and a language that sounds less like the rest of its group is pale
 - The map always starts with these groups by sound.
 - For *Thursday*, *Saturday* and *Christmas* there are also groups by origin, written by
   hand in `stories.js` (not found by the algorithm) and named on the map ("Thor's day",
-  "Jupiter's day", "the fourth day", "the fifth day"). A button above the side list
-  switches to them, and back. The **?** panel works through *Christmas*:
+  "Jupiter's day", "the fourth day", "the fifth day"). The **Groups: By sound | By
+  origin** switch at the top of the side panel shows them. It stays on *By origin* across
+  words until switched back; words without origin groups show sound. Each visit starts
+  on *By sound*. The **?** panel works through *Christmas*:
   - Polish *Boże Narodzenie* and Russian *Рождество* share the Slavic root *rod-*
     ("birth"), so the hand-written groups put them together.
   - By sound they score only about 22%. Sound alone puts Polish with Croatian *Božić*

@@ -106,6 +106,13 @@
   }
   .region { stroke: var(--border); stroke-width: 1.5; cursor: pointer; }
   aside { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 14px; align-self: start; }
+  .groupmode { display: flex; align-items: center; gap: 0; margin: 0 0 12px; font-size: 13px; }
+  .groupmode .gm-label { color: var(--muted); margin-right: 8px; }
+  .groupmode button { font-weight: 600; padding: 5px 12px; border-radius: 0; background: var(--bg); color: var(--ink); border: 1px solid var(--line); }
+  .groupmode button:first-of-type { border-radius: 8px 0 0 8px; }
+  .groupmode button:last-of-type { border-radius: 0 8px 8px 0; border-left: 0; }
+  .groupmode button[aria-pressed="true"] { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .groupmode.inactive button[aria-pressed="true"] { background: var(--bg); color: var(--accent); }
   aside h2 { font-size: 14px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin: 0 0 8px; }
   .legend { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); margin-bottom: 12px; flex-wrap: wrap; }
   .sw { width: 18px; height: 12px; border-radius: 3px; display: inline-block; }
@@ -149,6 +156,12 @@
   <div class="mapwrap notranslate" translate="no"><svg id="map" role="img" aria-label="Map of Europe"></svg></div>
   <aside>
     <h2>Similarity</h2>
+    <div class="groupmode" id="groupmode" role="group" aria-label="Groups">
+      <span class="gm-label">Groups</span>
+      <button type="button" data-mode="sound" aria-pressed="true">By sound</button>
+      <button type="button" data-mode="origin" aria-pressed="false"
+        title="Hand-written groups by origin: Christmas, Thursday and Saturday">By origin</button>
+    </div>
     <div class="legend" id="legend">
       <span class="sw" style="background:var(--land-lang)"></span>different
       <span class="sw" style="background:var(--s1)"></span>
@@ -251,8 +264,9 @@
       Slavic and Germanic groups. So their groups are set by hand from the words' origins and
       named in the side panel: "Thor's day", "Jupiter's day", "the fourth day" and so on.
       These groups are not computed, so the map never shows them by itself: it always
-      starts with groups by sound. On those three words, a button above the side list
-      switches to the groups by origin, and back.</p>
+      starts with groups by sound. The <b>Groups: By sound | By origin</b> switch at the
+      top of the side panel shows them. Once switched to <i>By origin</i>, it stays there
+      for every word until switched back; words without groups by origin show sound.</p>
 
     <h3>Worked example: Christmas</h3>
     <p>Switch Christmas to its groups by origin, and Polish <i>Boże Narodzenie</i> and

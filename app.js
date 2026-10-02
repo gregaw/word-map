@@ -25,9 +25,10 @@
     ref: null,     // reference language, or null for "best match with any"
     friend: null,  // a false-friend pair being shown, instead of a translation
     groupings: null, // curated groups by origin for the current word, if it has them
-    // Groups always come from sound unless the viewer switches a word that has
-    // hand-written groups by origin (Christmas, Thursday, Saturday) to those.
-    bySound: true,
+    // The "Groups" switch: by sound (the default on every visit) or by origin.
+    // Once switched, it stays until switched back. Only Christmas, Thursday and
+    // Saturday have groups by origin; other words show sound either way.
+    groupMode: "sound",
     run: 0,        // ignores results from a search that has since been replaced
   };
 
@@ -140,7 +141,7 @@
   // less like the rest is paler. Returns { groups, byLang: { lang: group } }.
   const GROUP_COLOURS = 8;
   function grouping() {
-    const curated = state.bySound ? null : state.groupings;
+    const curated = state.groupMode === "origin" ? state.groupings : null;
     const found = clusters(state.words, undefined, curated && curated.map((g) => g.langs));
     const groups = found.map((g, i) => {
       const name = curated
@@ -196,6 +197,11 @@
     const scores = scoreAll(state.words, state.ref);
     const grouped = state.query && !state.ref ? grouping() : null;
     $("legend").innerHTML = grouped ? GROUP_LEGEND : SCALE_LEGEND;
+    for (const b of document.querySelectorAll("#groupmode button")) {
+      b.setAttribute("aria-pressed", String(b.dataset.mode === state.groupMode));
+    }
+    // The switch only matters with no country selected.
+    $("groupmode").classList.toggle("inactive", !!state.ref);
     for (const c of COUNTRIES) {
       const best = Math.max(...c.langs.map((l) => scores[l] ?? -1));
       const p = shapes[c.name];
@@ -306,7 +312,6 @@
     state.run++; // drop any translation still in flight
     state.friend = pair;
     state.groupings = null;
-    state.bySound = true;
     state.ref = null;
     state.pending.clear();
     state.query = `${pair.pl.word} / ${pair.sk.word}`;
@@ -336,15 +341,11 @@
     } else if (state.groupings) {
       // This word has hand-written groups by origin; let the viewer compare
       // them with what the clustering finds from sound alone.
-      ref.append(state.bySound
-        ? "Colours show groups of alike-sounding words, found automatically. Paler means a looser fit. This word also has groups by origin, written by hand. "
-        : "Colours show groups by the origin of the word, written by hand, not found by the algorithm. ");
-      const flip = document.createElement("button");
-      flip.className = "ghost";
-      flip.style.padding = "2px 8px";
-      flip.textContent = state.bySound ? "Show groups by origin" : "Back to groups by sound";
-      flip.addEventListener("click", () => { state.bySound = !state.bySound; render(); });
-      ref.append(flip);
+      ref.textContent = state.groupMode === "origin"
+        ? "Colours show groups by the origin of the word, written by hand, not found by the algorithm. Paler means it sounds less like the rest of its group."
+        : "Colours show groups of alike-sounding words, found automatically. Paler means a looser fit. This word also has groups by origin: switch above.";
+    } else if (state.groupMode === "origin" && state.query) {
+      ref.textContent = "No groups by origin for this word (only Christmas, Thursday and Saturday have them), so colours show groups by sound.";
     } else {
       ref.textContent = "Colours show groups of alike-sounding words, found automatically. Paler means a looser fit. Click a country to compare against it.";
     }
@@ -406,6 +407,11 @@
     li.append(dot, w, pct);
     li.addEventListener("click", () => setRef(l));
     return li;
+  }
+
+  function setGroupMode(mode) {
+    state.groupMode = mode;
+    render();
   }
 
   function setRef(lang) {
@@ -531,7 +537,6 @@
     const run = ++state.run;
     state.friend = null;
     state.groupings = null;
-    state.bySound = true;
     story(null);
     $("list").scrollTop = 0;
     const provider = $("provider").value;
@@ -676,8 +681,7 @@
         state.ref = null;
         $("word").value = el.dataset.show;
         search(el.dataset.show); // prepared words show at once, before it returns
-        state.bySound = el.dataset.mode !== "origin";
-        render();
+        setGroupMode(el.dataset.mode === "origin" ? "origin" : "sound");
       });
     }
     // "Read this in…": open the live page through Google Translate, panel open.
@@ -697,6 +701,13 @@
     $("howto-close").addEventListener("click", () => dialog.close());
     // A click on the backdrop (outside the panel) closes it too.
     dialog.addEventListener("click", (e) => { if (e.target === dialog) dialog.close(); });
+  }
+
+  for (const b of document.querySelectorAll("#groupmode button")) {
+    b.addEventListener("click", () => {
+      if (state.ref) state.ref = null; // groups show with no country selected
+      setGroupMode(b.dataset.mode);
+    });
   }
 
   drawMap();
