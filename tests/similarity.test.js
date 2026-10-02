@@ -232,3 +232,23 @@ test("settings drive the measure and the clustering", () => {
   assert.equal(sim.clusters(words).length, 1, "53% clears the default threshold");
   assert.equal(sim.clusters(words, 0.6).length, 0, "but not 60%");
 });
+
+test("the Christmas worked example in the help panel stays true", () => {
+  const fs = require("node:fs");
+  const path = require("node:path");
+  const html = fs.readFileSync(path.join(__dirname, "..", "index.html"), "utf8");
+  const { PRESETS, GROUPINGS, findPreset } = require("../presets.js");
+  require("../stories.js");
+  const { similarity, SETTINGS } = require("../similarity.js");
+  // Polish and Russian share a curated group...
+  const group = GROUPINGS.Christmas.find((g) => g.langs.includes("pl"));
+  assert.ok(group.langs.includes("ru"));
+  // ...that sound alone would not form.
+  const ru = PRESETS.Christmas.ru;
+  assert.ok(similarity(PRESETS.Christmas.pl.word, ru.latin) < SETTINGS.clusterThreshold);
+  assert.match(html, /data-a="Boże Narodzenie" data-b="Rozhdestvo"/);
+  // Every "Show X on the map" button names a prepared word.
+  const shows = [...html.matchAll(/data-show="([^"]+)"/g)].map((m) => m[1]);
+  assert.ok(shows.length > 0);
+  for (const w of shows) assert.ok(findPreset(w), w);
+});

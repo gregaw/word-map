@@ -654,6 +654,15 @@
     for (const el of dialog.querySelectorAll("[data-a]")) {
       el.textContent = `${el.dataset.a} / ${el.dataset.b}: ${pct(similarity(el.dataset.a, el.dataset.b))}`;
     }
+    // "Show X on the map": close the panel and show that word with all its groups.
+    for (const el of dialog.querySelectorAll("[data-show]")) {
+      el.addEventListener("click", () => {
+        dialog.close();
+        state.ref = null;
+        $("word").value = el.dataset.show;
+        search(el.dataset.show);
+      });
+    }
     $("help").addEventListener("click", () => dialog.showModal());
     $("howto-close").addEventListener("click", () => dialog.close());
     // A click on the backdrop (outside the panel) closes it too.
