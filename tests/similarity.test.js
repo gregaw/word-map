@@ -256,7 +256,7 @@ test("the Christmas worked example in the help panel stays true", () => {
   assert.equal(groupOf("ru"), groupOf("uk"));
   assert.equal(groupOf("ru"), groupOf("en"), "Рождество with Christmas");
   assert.notEqual(groupOf("pl"), groupOf("ru"));
-  assert.match(html, /data-show="Christmas" data-mode="sound"/);
+  assert.match(html, /data-show="Christmas" data-mode="origin"/);
   // Every "Show X on the map" button names a prepared word.
   const shows = [...html.matchAll(/data-show="([^"]+)"/g)].map((m) => m[1]);
   assert.ok(shows.length > 0);
@@ -292,4 +292,11 @@ test("the words themselves are kept out of machine translation", () => {
     assert.match(tag, /translate="no"/, id);
   }
   assert.match(html, /class="mapwrap notranslate" translate="no"/);
+});
+
+test("the map starts with groups by sound; origin groups only on request", () => {
+  const app = require("node:fs").readFileSync(require("node:path").join(__dirname, "..", "app.js"), "utf8");
+  assert.match(app, /bySound: true,/, "default state");
+  assert.ok(!/state\.bySound = false;/.test(app), "nothing resets to origin by itself");
+  assert.match(app, /state\.bySound = el\.dataset\.mode !== "origin"/, "panel buttons default to sound");
 });

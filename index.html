@@ -250,22 +250,23 @@
       have drifted too far apart for any sound measure to group them without also merging the
       Slavic and Germanic groups. So their groups are set by hand from the words' origins and
       named in the side panel: "Thor's day", "Jupiter's day", "the fourth day" and so on.
-      These groups are not computed. On those three maps, a switch above the side list
-      shows the algorithm's own groups instead.</p>
+      These groups are not computed, so the map never shows them by itself: it always
+      starts with groups by sound. On those three words, a button above the side list
+      switches to the groups by origin, and back.</p>
 
     <h3>Worked example: Christmas</h3>
-    <p>On the Christmas map, Polish <i>Boże Narodzenie</i> and Russian <i>Рождество</i>
-      share one colour. <b>The algorithm did not put them there.</b> By sound they score
+    <p>Switch Christmas to its groups by origin, and Polish <i>Boże Narodzenie</i> and
+      Russian <i>Рождество</i> share one colour. <b>The algorithm did not put them there.</b> By sound they score
       only <span class="ex" data-a="Boże Narodzenie" data-b="Rozhdestvo"></span>, far
       below the <span data-value="clusterThreshold"></span> the clustering needs.</p>
     <p>For Christmas, Thursday and Saturday, the groups are <b>written by hand</b> in the
       page's data (<code>stories.js</code>): a list of which languages' words share an
-      origin, taken from their known history. On those maps the algorithm does only two
+      origin, taken from their known history. In that view the algorithm does only two
       things. It scores how alike each word sounds to the rest of its hand-made group,
       which sets how pale it is (Poland is the palest in its group). And it compares
       words when you click a country.</p>
-    <p><b>Left to sound alone</b>, the clustering groups Christmas differently, and
-      wrongly:</p>
+    <p><b>By sound</b>, which is what the map shows first, the clustering groups
+      Christmas differently, and by history wrongly:</p>
     <ul>
       <li>Polish <i>Boże Narodzenie</i> joins Croatian <i>Božić</i>. Both start with "God"
         (<i>Boże</i>, <i>Bog</i>), a real shared word but the wrong half of the Polish
@@ -286,8 +287,8 @@
       (<span class="ex" data-a="Kalėdos" data-b="Koleda"></span>, Roman
       <i>calendae</i>).</p>
     <p>Compare the two for yourself:
-      <button type="button" class="ghost" data-show="Christmas">Christmas, grouped by origin</button>
-      <button type="button" class="ghost" data-show="Christmas" data-mode="sound">Christmas, grouped by sound</button></p>
+      <button type="button" class="ghost" data-show="Christmas">Christmas, grouped by sound</button>
+      <button type="button" class="ghost" data-show="Christmas" data-mode="origin">Christmas, grouped by origin</button></p>
 
     <h3>Limits</h3>
     <p>Sounding alike is not the same as being related. <span class="ex" data-a="kissa" data-b="cat"></span>

@@ -25,7 +25,9 @@
     ref: null,     // reference language, or null for "best match with any"
     friend: null,  // a false-friend pair being shown, instead of a translation
     groupings: null, // curated groups by origin for the current word, if it has them
-    bySound: false,  // show the clustering's own groups even where curated ones exist
+    // Groups always come from sound unless the viewer switches a word that has
+    // hand-written groups by origin (Christmas, Thursday, Saturday) to those.
+    bySound: true,
     run: 0,        // ignores results from a search that has since been replaced
   };
 
@@ -304,7 +306,7 @@
     state.run++; // drop any translation still in flight
     state.friend = pair;
     state.groupings = null;
-    state.bySound = false;
+    state.bySound = true;
     state.ref = null;
     state.pending.clear();
     state.query = `${pair.pl.word} / ${pair.sk.word}`;
@@ -335,12 +337,12 @@
       // This word has hand-written groups by origin; let the viewer compare
       // them with what the clustering finds from sound alone.
       ref.append(state.bySound
-        ? "Colours show groups found from sound alone, by the clustering. "
+        ? "Colours show groups of alike-sounding words, found automatically. Paler means a looser fit. This word also has groups by origin, written by hand. "
         : "Colours show groups by the origin of the word, written by hand, not found by the algorithm. ");
       const flip = document.createElement("button");
       flip.className = "ghost";
       flip.style.padding = "2px 8px";
-      flip.textContent = state.bySound ? "Group by origin" : "Group by sound instead";
+      flip.textContent = state.bySound ? "Show groups by origin" : "Back to groups by sound";
       flip.addEventListener("click", () => { state.bySound = !state.bySound; render(); });
       ref.append(flip);
     } else {
@@ -529,7 +531,7 @@
     const run = ++state.run;
     state.friend = null;
     state.groupings = null;
-    state.bySound = false;
+    state.bySound = true;
     story(null);
     $("list").scrollTop = 0;
     const provider = $("provider").value;
@@ -674,7 +676,7 @@
         state.ref = null;
         $("word").value = el.dataset.show;
         search(el.dataset.show); // prepared words show at once, before it returns
-        state.bySound = el.dataset.mode === "sound";
+        state.bySound = el.dataset.mode !== "origin";
         render();
       });
     }

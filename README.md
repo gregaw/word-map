@@ -98,12 +98,11 @@ yellow, …), and a language that sounds less like the rest of its group is pale
 - Groups are found automatically by average-linkage clustering: the two groups whose
   words are most alike on average keep merging while that average is at least 0.5. For
   *king* this finds the Slavic *król*, Germanic *König* and Latin *roi* groups.
-- For *Thursday*, *Saturday* and *Christmas*, the words' origins matter more than their
-  sound, so their groups are curated by origin in `stories.js` and named on the map
-  ("Thor's day", "Jupiter's day", "the fourth day", "the fifth day").
-  These groups are written by hand, not found by the algorithm. On those three maps a
-  switch above the side list shows the algorithm's own groups for comparison. The **?**
-  panel works through *Christmas*:
+- The map always starts with these groups by sound.
+- For *Thursday*, *Saturday* and *Christmas* there are also groups by origin, written by
+  hand in `stories.js` (not found by the algorithm) and named on the map ("Thor's day",
+  "Jupiter's day", "the fourth day", "the fifth day"). A button above the side list
+  switches to them, and back. The **?** panel works through *Christmas*:
   - Polish *Boże Narodzenie* and Russian *Рождество* share the Slavic root *rod-*
     ("birth"), so the hand-written groups put them together.
   - By sound they score only about 22%. Sound alone puts Polish with Croatian *Božić*
