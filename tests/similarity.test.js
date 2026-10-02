@@ -213,3 +213,22 @@ test("curated groups by origin: real languages, each in at most one group", () =
   assert.equal(findPreset("thursday").groups, GROUPINGS.Thursday);
   assert.equal(findPreset("king").groups, undefined);
 });
+
+test("the How it works panel only uses values the page fills in", () => {
+  const fs = require("node:fs");
+  const path = require("node:path");
+  const html = fs.readFileSync(path.join(__dirname, "..", "index.html"), "utf8");
+  const app = fs.readFileSync(path.join(__dirname, "..", "app.js"), "utf8");
+  const keys = [...html.matchAll(/data-value="(\w+)"/g)].map((m) => m[1]);
+  assert.ok(keys.length >= 4);
+  for (const k of keys) assert.match(app, new RegExp(`\\b${k}:`), `app.js fills ${k}`);
+  for (const [, a, b] of html.matchAll(/data-a="([^"]+)" data-b="([^"]+)"/g)) assert.ok(a && b);
+});
+
+test("settings drive the measure and the clustering", () => {
+  const sim = require("../similarity.js");
+  assert.deepEqual(Object.keys(sim.SETTINGS).sort(), ["clusterThreshold", "skeletonMinShared", "skeletonWeight"]);
+  const words = { pl: { word: "czwartek" }, uk: { word: "четвер" } };
+  assert.equal(sim.clusters(words).length, 1, "53% clears the default threshold");
+  assert.equal(sim.clusters(words, 0.6).length, 0, "but not 60%");
+});

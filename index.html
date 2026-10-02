@@ -53,6 +53,16 @@
     border: 0; background: var(--accent); color: #fff; cursor: pointer;
   }
   button.ghost { background: transparent; color: var(--accent); border: 1px solid var(--line); font-weight: 500; }
+  button.help { width: 46px; padding: 10px 0; font-size: 20px; font-weight: 700; border-radius: 50%; }
+  dialog#howto { border: 1px solid var(--line); border-radius: 14px; padding: 0; max-width: 680px; width: calc(100% - 32px); max-height: calc(100% - 48px); background: var(--panel); color: var(--ink); }
+  dialog#howto::backdrop { background: rgba(0, 0, 0, 0.45); }
+  #howto .body { padding: 20px 24px 22px; font-size: 15px; }
+  #howto h2 { margin: 0 0 4px; font-size: 20px; }
+  #howto h3 { margin: 18px 0 6px; font-size: 15px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
+  #howto p, #howto li { margin: 6px 0; }
+  #howto ol, #howto ul { padding-left: 22px; margin: 6px 0; }
+  #howto .ex { font-variant-numeric: tabular-nums; white-space: nowrap; font-weight: 600; }
+  #howto .close { position: sticky; top: 0; float: right; margin: 12px 12px 0 0; padding: 4px 12px; }
   button:disabled { opacity: 0.5; cursor: default; }
   .presets { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
   .rowlabel { font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); align-self: center; }
@@ -122,6 +132,7 @@
   <form class="search" id="search">
     <input id="word" type="text" placeholder="e.g. word, water, school, milk" autocomplete="off" autofocus>
     <button id="go" type="submit">Translate</button>
+    <button id="help" type="button" class="ghost help" aria-label="How it works" aria-haspopup="dialog" title="How it works">?</button>
   </form>
   <div id="presets" class="presets" aria-label="Prepared words"><span class="rowlabel">Words</span></div>
   <div id="stories" class="presets" aria-label="Words with a story"><span class="rowlabel">Stories</span></div>
@@ -163,6 +174,72 @@
   </aside>
 </main>
 <div id="tip"></div>
+<dialog id="howto" aria-labelledby="howto-title">
+  <button id="howto-close" class="ghost close" type="button">Close</button>
+  <div class="body">
+    <h2 id="howto-title">How it works</h2>
+    <p>Every word is translated into 43 languages. The page then measures how alike the
+      words <em>sound</em> and colours the map from that.</p>
+
+    <h3>How alike two words sound</h3>
+    <ol>
+      <li><b>Romanise</b> Cyrillic, Greek, Georgian and Armenian into Latin letters
+        (слово → slovo).</li>
+      <li><b>Tidy up:</b> drop articles (<i>das Wort</i> → <i>Wort</i>) and accents.</li>
+      <li><b>Spell by sound:</b> Polish <i>sz</i>, Czech <i>š</i> and German <i>sch</i> all
+        become <i>sh</i>; <i>w</i> becomes <i>v</i>, <i>ph</i> becomes <i>f</i>, and so on.</li>
+      <li><b>Compare in two ways and keep the higher score:</b>
+        <ul>
+          <li><b>Sound classes.</b> Sounds that swap as a word travels between languages
+            form a class: t/d, k/g, p/b/f, s/z/sh, cz/ch/ts, and so on. Turning one word
+            into the other costs little within a class, least for vowels (they drift most),
+            and most for adding or dropping a consonant. The score is 1 minus that cost,
+            divided by the cost of the whole longer word. This follows Dolgopolsky's method
+            for spotting related words.</li>
+          <li><b>Consonant skeleton.</b> The consonants in order survive when a language drops
+            a syllable: <i>czwartek</i> is cz-w-r-t-k and <i>четвер</i> is č-t-v-r. This counts
+            only when two words share at least <span data-value="skeletonMinShared"></span>
+            consonants in order, and then for at most <span data-value="skeletonWeight"></span>.</li>
+        </ul>
+      </li>
+    </ol>
+    <p>For example: <span class="ex" data-a="Thursday" data-b="Donnerstag"></span>,
+      <span class="ex" data-a="czwartek" data-b="четвер"></span>,
+      <span class="ex" data-a="mot" data-b="parola"></span>,
+      <span class="ex" data-a="dom" data-b="house"></span>.</p>
+
+    <h3>Colours</h3>
+    <ul>
+      <li><b>Click a country</b> to compare every language with that one:
+        <span data-value="bands"></span>, and grey below.</li>
+      <li><b>No country selected:</b> the map shows <b>groups</b> of alike words, one colour
+        each. A language is paler the less it sounds like the rest of its group (its average
+        similarity to the others).</li>
+    </ul>
+
+    <h3>How the groups are found</h3>
+    <p><b>Average-linkage clustering.</b> Every language starts as a group of its own. The
+      two groups whose words are most alike <em>on average</em> are merged: every word in one
+      is compared with every word in the other. This repeats until no two groups average
+      <span data-value="clusterThreshold"></span> or more. A language left on its own stays
+      grey.</p>
+    <p>Why the average, and not just any close pair? Chains of near neighbours would join
+      whole families that are not alike: the Slavic <i>czwartek</i> and the Germanic
+      <i>torsdag</i> are linked through forms in between.</p>
+
+    <h3>Groups by origin</h3>
+    <p>For <b>Thursday</b>, <b>Saturday</b> and <b>Christmas</b>, history matters more than
+      sound. The Latin <i>jeudi</i>, <i>giovedì</i> and <i>jueves</i> (all "Jupiter's day")
+      have drifted too far apart for any sound measure to group them without also merging the
+      Slavic and Germanic groups. So their groups are set by hand from the words' origins and
+      named in the side panel: "Thor's day", "Jupiter's day", "the fourth day" and so on.</p>
+
+    <h3>Limits</h3>
+    <p>Sounding alike is not the same as being related. <span class="ex" data-a="kissa" data-b="cat"></span>
+      is chance, while related words that changed a lot can score low. The prepared words'
+      translations and origins were written by Claude, so they may contain mistakes.</p>
+  </div>
+</dialog>
 <script src="languages.js"></script>
 <script src="similarity.js"></script>
 <script src="presets.js"></script>

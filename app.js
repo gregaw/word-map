@@ -111,12 +111,12 @@
   const css = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 
   // Below 0.45 the words have little in common; above it, pale orange -> red.
+  // Comparison colours: the lowest score each band starts at, palest first.
+  const BANDS = [[0.45, "--s1"], [0.6, "--s2"], [0.75, "--s3"], [0.9, "--s4"]];
   function colour(score) {
-    if (score == null || score < 0.45) return null;
-    if (score < 0.6) return css("--s1");
-    if (score < 0.75) return css("--s2");
-    if (score < 0.9) return css("--s3");
-    return css("--s4");
+    let band = null;
+    for (const [from, token] of BANDS) if (score != null && score >= from) band = token;
+    return band && css(band);
   }
 
   function fontSize(name) {
@@ -638,8 +638,31 @@
     }
   }
 
+  // "How it works": its example scores and thresholds come from the code, so
+  // the explanation cannot drift from what the page actually does.
+  function initHelp() {
+    const dialog = $("howto");
+    const pct = (v) => Math.round(v * 100) + "%";
+    const { SETTINGS, similarity } = window.WordSimilarity;
+    const values = {
+      clusterThreshold: pct(SETTINGS.clusterThreshold),
+      skeletonWeight: pct(SETTINGS.skeletonWeight),
+      skeletonMinShared: String(SETTINGS.skeletonMinShared),
+      bands: BANDS.map(([from, token], i) => `${["pale", "orange", "dark orange", "red"][i]} from ${pct(from)}`).join(", "),
+    };
+    for (const el of dialog.querySelectorAll("[data-value]")) el.textContent = values[el.dataset.value];
+    for (const el of dialog.querySelectorAll("[data-a]")) {
+      el.textContent = `${el.dataset.a} / ${el.dataset.b}: ${pct(similarity(el.dataset.a, el.dataset.b))}`;
+    }
+    $("help").addEventListener("click", () => dialog.showModal());
+    $("howto-close").addEventListener("click", () => dialog.close());
+    // A click on the backdrop (outside the panel) closes it too.
+    dialog.addEventListener("click", (e) => { if (e.target === dialog) dialog.close(); });
+  }
+
   drawMap();
   initSettings();
+  initHelp();
   initPresets("words", "presets");
   initPresets("stories", "stories");
   initFriends();

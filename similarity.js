@@ -100,6 +100,13 @@
     return prev[b.length];
   }
 
+  // Tuning, also quoted on the page's "How it works" panel.
+  const SETTINGS = {
+    skeletonMinShared: 3, // consonants two skeletons must share before they count
+    skeletonWeight: 0.8,  // the most a skeleton match alone can score
+    clusterThreshold: 0.5, // average similarity two groups need to merge
+  };
+
   // Sounds as single tokens: the digraphs phonetic() produces count as one sound.
   const DIGRAPHS = ["shch", "sh", "ch", "zh", "ts", "dz", "kh", "gh", "dj", "gj", "kj"];
   function sounds(p) {
@@ -182,7 +189,7 @@
     }
     const common = d[x.length][y.length];
     // Two shared consonants happen by chance (puhelin / telephone share l, n).
-    return common < 3 ? 0 : (2 * common) / (x.length + y.length);
+    return common < SETTINGS.skeletonMinShared ? 0 : (2 * common) / (x.length + y.length);
   }
 
   // 0..1: 1 means "sounds the same", 0 "nothing in common". Words given with a
@@ -192,7 +199,7 @@
     if (!sa.length || !sb.length) return 0;
     if (sa.join("") === sb.join("")) return 1;
     // The skeleton alone is weaker evidence, so it counts for at most 0.8.
-    return Math.max(alignSimilarity(sa, sb), 0.8 * skeletonSimilarity(sa, sb));
+    return Math.max(alignSimilarity(sa, sb), SETTINGS.skeletonWeight * skeletonSimilarity(sa, sb));
   }
 
   // Groups of alike words, for colouring the map when no country is selected.
@@ -202,7 +209,7 @@
   // { langs: [...], strength: { lang: average similarity to the rest of its group } }.
   // Pass `fixed` ([[lang, ...], ...]) to skip the clustering and only score
   // groups decided elsewhere (curated by origin).
-  function clusters(words, threshold = 0.5, fixed = null) {
+  function clusters(words, threshold = SETTINGS.clusterThreshold, fixed = null) {
     const text = (l) => words[l].latin || words[l].word;
     const langs = Object.keys(words).filter((l) => words[l] && words[l].word);
     const sim = {};
@@ -257,7 +264,7 @@
     return scores;
   }
 
-  const api = { romanize, phonetic, sounds, levenshtein, similarity, scoreAll, clusters };
+  const api = { SETTINGS, romanize, phonetic, sounds, levenshtein, similarity, scoreAll, clusters };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.WordSimilarity = api;
 })(typeof window !== "undefined" ? window : globalThis);

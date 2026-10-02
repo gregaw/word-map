@@ -62,6 +62,9 @@ Each result is cached in the browser, so repeating a word costs nothing.
 
 ## How "similar" is measured
 
+The **?** button next to *Translate* explains this on the page itself. Its example scores
+and thresholds are computed from the code when it opens, so they stay current.
+
 `similarity.js` does the following to each word:
 
 1. It romanises Cyrillic, Greek, Georgian and Armenian, or uses Claude's romanisation
@@ -75,7 +78,7 @@ Then it compares the two words' sounds in two ways and keeps the higher score:
 - **Alignment by sound class.** Sounds are grouped into classes (t/d, k/g, p/b/f, s/z/sh,
   vowels…), following Dolgopolsky's method for spotting related words. A sound changing
   within its class costs little, and vowels cost least, since they drift most. So
-  *Thursday / Donnerstag* scores 0.60, and *noc / night* 0.62.
+  *Thursday / Donnerstag* scores 0.64, and *noc / night* 0.62.
 - **The consonant skeleton.** This is the consonants in order, which survive when a
   language drops a syllable: *czwartek* is cz-w-r-t-k and *четвер* is č-t-v-r. It counts
   only when two words share at least three consonants, and then for at most 0.8.
