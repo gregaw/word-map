@@ -2,6 +2,8 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const { romanize, phonetic, levenshtein, similarity } = require("../similarity.js");
 const { LANGUAGES, COUNTRIES, REGIONS } = require("../languages.js");
+const { UI_LANGS, STRINGS } = require("../i18n.js");
+for (const lang of UI_LANGS) require(`../i18n-${lang}.js`);
 
 test("romanize handles Cyrillic, Greek, Georgian and Armenian", () => {
   assert.equal(romanize("слово"), "slovo");
@@ -112,23 +114,31 @@ test("false friends: complete entries, and each pair really sounds alike", () =>
   assert.equal(FALSE_FRIENDS.length, 15);
   for (const f of FALSE_FRIENDS) {
     for (const l of ["pl", "sk"]) {
-      assert.ok(f[l].word && f[l].means && f[l].instead, `${f.pl.word}: ${l}`);
+      assert.ok(f[l].word && f[l].instead, `${f.pl.word}: ${l}`);
     }
-    assert.notEqual(f.pl.means, f.sk.means, f.pl.word);
+    for (const lang of UI_LANGS) {
+      const means = STRINGS[lang].friends[f.pl.word];
+      assert.ok(means && means.length === 3 && means.every(Boolean), `${lang}: ${f.pl.word}`);
+      assert.notEqual(means[0], means[1], `${lang}: ${f.pl.word}`);
+    }
     assert.ok(similarity(f.pl.word, f.sk.word) >= 0.75, `${f.pl.word} / ${f.sk.word}`);
-    if (f.cs) assert.ok(f.cs.word && f.cs.means, `${f.pl.word}: cs`);
+    if (f.cs) assert.ok(f.cs.word, `${f.pl.word}: cs`);
   }
 });
 
-test("stories: every word in every language, with a note", () => {
+test("stories: every word in every language, with a caption in every interface language", () => {
   const { PRESETS, GROUPS, NOTES, findPreset } = require("../presets.js");
   require("../stories.js");
   assert.deepEqual(GROUPS.stories, ["Thursday", "Saturday", "Christmas", "king", "bread", "church", "orange", "tomato", "potato", "turkey", "night", "mother"]);
   for (const query of GROUPS.stories) {
     assert.deepEqual(Object.keys(PRESETS[query]).sort(), Object.keys(LANGUAGES).sort(), query);
     for (const [lang, w] of Object.entries(PRESETS[query])) assert.ok(w.word && w.word.trim(), `${query}/${lang}`);
-    assert.ok(NOTES[query] && NOTES[query].text.length > 40, `${query}: note`);
     assert.ok(LANGUAGES[NOTES[query].ref], `${query}: ref`);
+    for (const lang of UI_LANGS) {
+      const story = STRINGS[lang].stories[query];
+      assert.ok(story && story.lead && story.points.length >= 2, `${lang}: ${query}`);
+      assert.equal(story.points.length, STRINGS.en.stories[query].points.length, `${lang}: ${query} points`);
+    }
   }
   assert.equal(findPreset("KING").note, NOTES.king);
   assert.equal(findPreset("word").note, undefined);
@@ -208,21 +218,28 @@ test("curated groups by origin: real languages, each in at most one group", () =
     const all = groups.flatMap((g) => g.langs);
     assert.equal(new Set(all).size, all.length, `${q}: no language twice`);
     for (const l of all) assert.ok(LANGUAGES[l], `${q}: ${l}`);
-    for (const g of groups) assert.ok(g.name && g.langs.length > 1, `${q}: ${g.name}`);
+    for (const g of groups) {
+      assert.ok(g.langs.length > 1, `${q}: ${g.id}`);
+      for (const lang of UI_LANGS) assert.ok(STRINGS[lang].groups[g.id], `${lang}: group ${g.id}`);
+    }
   }
   assert.equal(findPreset("thursday").groups, GROUPINGS.Thursday);
   assert.equal(findPreset("king").groups, undefined);
 });
 
-test("the How it works panel only uses values the page fills in", () => {
+test("the How it works panel only uses values the page fills in, in every language", () => {
   const fs = require("node:fs");
   const path = require("node:path");
-  const html = fs.readFileSync(path.join(__dirname, "..", "index.html"), "utf8");
   const app = fs.readFileSync(path.join(__dirname, "..", "app.js"), "utf8");
-  const keys = [...html.matchAll(/data-value="(\w+)"/g)].map((m) => m[1]);
-  assert.ok(keys.length >= 4);
-  for (const k of keys) assert.match(app, new RegExp(`\\b${k}:`), `app.js fills ${k}`);
-  for (const [, a, b] of html.matchAll(/data-a="([^"]+)" data-b="([^"]+)"/g)) assert.ok(a && b);
+  const attrs = (html) => [...html.matchAll(/data-(value|a|b|show|mode)="([^"]+)"/g)].map((m) => m[0]).sort();
+  for (const lang of UI_LANGS) {
+    const html = STRINGS[lang].help;
+    const keys = [...html.matchAll(/data-value="(\w+)"/g)].map((m) => m[1]);
+    assert.ok(keys.length >= 4, lang);
+    for (const k of keys) assert.match(app, new RegExp(`\\b${k}:`), `app.js fills ${k}`);
+    // The same examples and buttons as English, whatever the prose around them.
+    assert.deepEqual(attrs(html), attrs(STRINGS.en.help), lang);
+  }
 });
 
 test("settings drive the measure and the clustering", () => {
@@ -236,7 +253,7 @@ test("settings drive the measure and the clustering", () => {
 test("the Christmas worked example in the help panel stays true", () => {
   const fs = require("node:fs");
   const path = require("node:path");
-  const html = fs.readFileSync(path.join(__dirname, "..", "index.html"), "utf8");
+  const html = STRINGS.en.help; // the other languages carry the same examples (checked above)
   const { PRESETS, GROUPINGS, findPreset } = require("../presets.js");
   require("../stories.js");
   const { similarity, SETTINGS } = require("../similarity.js");
@@ -263,11 +280,14 @@ test("the Christmas worked example in the help panel stays true", () => {
   for (const w of shows) assert.ok(findPreset(w), w);
 });
 
-test("the How it works panel opens with the just-for-fun disclaimer", () => {
-  const html = require("node:fs").readFileSync(require("node:path").join(__dirname, "..", "index.html"), "utf8");
-  const panel = html.slice(html.indexOf('id="howto-title"'));
-  const first = panel.indexOf("<p");
-  assert.ok(panel.slice(first, first + 200).includes("Just for fun"), "disclaimer is the first paragraph");
+test("the How it works panel opens with the just-for-fun disclaimer, in every language", () => {
+  for (const lang of UI_LANGS) {
+    const html = STRINGS[lang].help.trim();
+    assert.ok(html.startsWith('<h2 id="howto-title">'), lang);
+    const first = html.indexOf("<p");
+    assert.ok(html.slice(first).startsWith('<p class="disclaimer">'), `${lang}: disclaimer is the first paragraph`);
+  }
+  assert.ok(STRINGS.en.help.includes("Just for fun"));
 });
 
 test("translateLink builds Google Translate proxy links, and only for public https pages", () => {
@@ -283,6 +303,7 @@ test("translateLink builds Google Translate proxy links, and only for public htt
     assert.equal(translateLink(href, "pl"), null, href);
   }
   assert.ok(READ_IN.some(([code]) => code === "pl"));
+  assert.match(translateLink("https://gregaw.github.io/word-map/pl/", "fr", "#how", "pl"), /_x_tr_sl=pl&_x_tr_tl=fr/);
 });
 
 test("the words themselves are kept out of machine translation", () => {
@@ -301,6 +322,85 @@ test("the map starts with groups by sound; origin groups only on request", () =>
   assert.match(app, /groupMode: "sound",/, "default on every visit");
   // Only the switch (and the panel's buttons) change it; new words keep it.
   assert.equal((app.match(/state\.groupMode = /g) || []).length, 1, "set in one place");
-  assert.match(html, /data-mode="sound" aria-pressed="true">By sound/);
-  assert.match(html, /data-mode="origin" aria-pressed="false"/);
+  assert.match(html, /data-mode="sound" aria-pressed="true" data-i18n="bySound">By sound/);
+  assert.match(html, /data-mode="origin" aria-pressed="false" data-i18n="handPicked"/);
+});
+
+// ---------- interface languages ----------
+
+test("every interface language has every string the English one has", () => {
+  const shape = (v) => (Array.isArray(v) ? `array:${v.length}` : typeof v);
+  const holes = (s) => [...String(s).matchAll(/\{(\w+)\}/g)].map((m) => m[1]).sort();
+  const en = STRINGS.en;
+  for (const lang of UI_LANGS) {
+    const s = STRINGS[lang];
+    assert.ok(s, lang);
+    assert.deepEqual(Object.keys(s).sort(), Object.keys(en).sort(), lang);
+    for (const part of ["ui", "regions", "stories", "groups", "friends"]) {
+      assert.deepEqual(Object.keys(s[part]).sort(), Object.keys(en[part]).sort(), `${lang}.${part}`);
+    }
+    for (const [k, v] of Object.entries(en.ui)) {
+      assert.equal(shape(s.ui[k]), shape(v), `${lang}.ui.${k}`);
+      assert.deepEqual(holes(s.ui[k]), holes(v), `${lang}.ui.${k} placeholders`);
+    }
+    for (const r of REGIONS) assert.ok(s.regions[r.name], `${lang}: ${r.name}`);
+  }
+});
+
+test("t() fills placeholders and falls back to English, then to the key", () => {
+  const I18N = require("../i18n.js");
+  assert.equal(I18N.t("en", "nLanguages", { n: 7 }), "7 languages");
+  I18N.add("xx", { ui: {} });
+  assert.equal(I18N.t("xx", "close"), "Close");
+  assert.equal(I18N.t("en", "no-such-key"), "no-such-key");
+  delete STRINGS.xx;
+});
+
+test("the interface language comes from ?lang= or the /xx/ folder", () => {
+  const { detectLang, langPath } = require("../i18n.js");
+  assert.equal(detectLang({ pathname: "/word-map/", search: "" }), "en");
+  assert.equal(detectLang({ pathname: "/word-map/pl/", search: "" }), "pl");
+  assert.equal(detectLang({ pathname: "/home/me/europe-word-map/de/index.html", search: "" }), "de");
+  assert.equal(detectLang({ pathname: "/word-map/", search: "?lang=it" }), "it");
+  assert.equal(detectLang({ pathname: "/word-map/fr/", search: "?lang=fr" }), "en", "only the four");
+  assert.equal(langPath("en"), "./");
+  assert.equal(langPath("pl"), "pl/");
+  assert.equal(langPath("en", true), "index.html");
+  assert.equal(langPath("de", true), "de/index.html");
+});
+
+test("prepared words are found by their name in the interface language", () => {
+  const { findPreset, presetLabel } = require("../presets.js");
+  require("../stories.js");
+  assert.equal(findPreset("czwartek", "pl").query, "Thursday");
+  assert.equal(findPreset("Donnerstag", "de").query, "Thursday");
+  assert.equal(findPreset("giovedi", "it").query, "Thursday", "accents are optional");
+  assert.equal(findPreset("Thursday", "pl").query, "Thursday", "English still works");
+  assert.equal(findPreset("czwartek", "en"), null, "but not another language's word");
+  assert.equal(presetLabel("Christmas", "pl"), "Boże Narodzenie");
+  assert.equal(presetLabel("Christmas", "en"), "Christmas");
+});
+
+test("the language pages are up to date with index.html", () => {
+  const fs = require("node:fs"), path = require("node:path");
+  const { build } = require("../scripts/build-langs.js");
+  const pages = build();
+  assert.deepEqual(Object.keys(pages).sort(), ["de/index.html", "it/index.html", "pl/index.html"]);
+  for (const [file, html] of Object.entries(pages)) {
+    const onDisk = fs.readFileSync(path.join(__dirname, "..", file), "utf8");
+    assert.equal(onDisk, html, `${file} is stale: run node scripts/build-langs.js`);
+    assert.match(html, /<base href="\.\.\/">/);
+    assert.match(html, new RegExp(`<html lang="${file.slice(0, 2)}">`));
+  }
+  // Every interface string the page marks exists.
+  const index = fs.readFileSync(path.join(__dirname, "..", "index.html"), "utf8");
+  for (const [, key] of index.matchAll(/data-i18n(?:-\w+)?="(\w+)"/g)) assert.ok(key in STRINGS.en.ui, key);
+  for (const lang of UI_LANGS) assert.match(index, new RegExp(`<script src="i18n-${lang}.js">`));
+});
+
+test("the country tooltip is for a mouse only, and short-lived", () => {
+  const app = require("node:fs").readFileSync(require("node:path").join(__dirname, "..", "app.js"), "utf8");
+  assert.match(app, /pointerType !== "mouse"/);
+  assert.match(app, /addEventListener\("pointerdown", \(\) => \{ shown = false; hideTip\(\); \}\)/);
+  assert.match(app, /setTimeout\(hideTip, TIP_MS\)/);
 });

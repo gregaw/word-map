@@ -19,8 +19,9 @@
       /^172\.(1[6-9]|2\d|3[01])\./.test(host) || host.endsWith(".local") || !host.includes(".");
   }
 
-  // href: the page's address; lang: target code; hash: what to open on arrival.
-  function translateLink(href, lang, hash = "#how") {
+  // href: the page's address; lang: target code; hash: what to open on arrival;
+  // from: the language the page is in.
+  function translateLink(href, lang, hash = "#how", from = "en") {
     let url;
     try { url = new URL(href); } catch { return null; }
     if (url.protocol !== "https:" || isPrivateHost(url.hostname)) return null;
@@ -28,7 +29,7 @@
     const host = url.hostname.replace(/-/g, "--").replace(/\./g, "-") + ".translate.goog";
     const out = new URL(`https://${host}${url.pathname}`);
     url.searchParams.forEach((v, k) => out.searchParams.set(k, v));
-    out.searchParams.set("_x_tr_sl", "en");
+    out.searchParams.set("_x_tr_sl", from);
     out.searchParams.set("_x_tr_tl", lang);
     out.searchParams.set("_x_tr_hl", lang);
     out.hash = hash;

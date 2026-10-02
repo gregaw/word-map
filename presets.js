@@ -171,8 +171,8 @@
   // -> { query: { lang: { word, latin? } } }, keeping insertion order.
   const PRESETS = {};
   const GROUPS = {};  // group name -> [query, ...], one row of buttons each
-  const NOTES = {};   // query -> { text, ref }: the story told under the buttons, if any
-  const GROUPINGS = {}; // query -> [{ name, langs }]: curated groups by origin, if any
+  const NOTES = {};   // query -> { ref }: story words; their captions are in i18n-xx.js
+  const GROUPINGS = {}; // query -> [{ id, langs }]: hand-picked groups by origin, if any
 
   function toWords(langs) {
     const out = {};
@@ -182,27 +182,38 @@
     return out;
   }
 
-  // entries: { query: langs } or { query: { note, words: langs } }.
+  // entries: { query: langs } or { query: { ref, groups, words: langs } }.
   function addGroup(name, entries) {
     GROUPS[name] = [];
     for (const [query, entry] of Object.entries(entries)) {
       const langs = entry.words || entry;
       PRESETS[query] = toWords(langs);
-      if (entry.note) NOTES[query] = { text: entry.note, ref: entry.ref };
-      if (entry.groups) GROUPINGS[query] = entry.groups.map(([name, langs]) => ({ name, langs: langs.split(" ") }));
+      if (entry.ref) NOTES[query] = { ref: entry.ref };
+      if (entry.groups) GROUPINGS[query] = entry.groups.map(([id, langs]) => ({ id, langs: langs.split(" ") }));
       GROUPS[name].push(query);
     }
   }
   addGroup("words", RAW);
 
-  // Case-insensitive lookup: "italy", "Italy" and " ITALY " all match.
-  function findPreset(query) {
-    const q = String(query).trim().toLowerCase();
-    const key = Object.keys(PRESETS).find((k) => k.toLowerCase() === q);
+  // Lower case, no accents: "Giovedì" and "giovedi" are the same here.
+  const fold = (s) => String(s).trim().toLowerCase().normalize("NFD").replace(/\p{M}/gu, "");
+
+  // A prepared word by its English name or by its word in `lang`, ignoring
+  // case and accents: "italy", "Włochy" (lang "pl") and "giovedi" (lang "it").
+  function findPreset(query, lang = "en") {
+    const q = fold(query);
+    const key = Object.keys(PRESETS).find(
+      (k) => fold(k) === q || (PRESETS[k][lang] && fold(PRESETS[k][lang].word) === q),
+    );
     return key ? { query: key, words: PRESETS[key], note: NOTES[key], groups: GROUPINGS[key] } : null;
   }
 
-  const api = { PRESETS, GROUPS, NOTES, GROUPINGS, addGroup, findPreset };
+  // What a prepared word's button says in an interface language.
+  function presetLabel(query, lang) {
+    return (lang !== "en" && PRESETS[query][lang] && PRESETS[query][lang].word) || query;
+  }
+
+  const api = { PRESETS, GROUPS, NOTES, GROUPINGS, addGroup, findPreset, presetLabel };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.EuropePresets = api;
 })(typeof window !== "undefined" ? window : globalThis);

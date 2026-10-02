@@ -5,7 +5,8 @@
   "scripts": {
     "test": "node --test tests/*.test.js",
     "build-map": "node scripts/build-map.mjs",
-    "screenshots": "node scripts/screenshots.mjs && python3 scripts/shrink_pngs.py screenshots"
+    "screenshots": "node scripts/screenshots.mjs && python3 scripts/shrink_pngs.py screenshots",
+    "build-langs": "node scripts/build-langs.js"
   },
   "devDependencies": {
     "d3-geo": "^3.1.1",

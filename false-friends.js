@@ -2,86 +2,87 @@
 // something different. Czech is included where its word matches the Slovak one
 // in both sound and meaning.
 //
-// For each language: the word, what it means, and `instead` — what that
-// language actually says for the *other* language's meaning.
+// For each language: the word, and `instead`: what that language actually says
+// for the *other* language's meaning. What each word means is in each
+// i18n-xx.js, under friends, keyed by the Polish word.
 (function (root) {
   "use strict";
 
   const FALSE_FRIENDS = [
     {
-      pl: { word: "czerstwy", means: "stale", instead: "świeży" },
-      sk: { word: "čerstvý", means: "fresh", instead: "starý" },
-      cs: { word: "čerstvý", means: "fresh" },
+      pl: { word: "czerstwy", instead: "świeży" },
+      sk: { word: "čerstvý", instead: "starý" },
+      cs: { word: "čerstvý" },
     },
     {
-      pl: { word: "kompot", means: "a drink made from boiled fruit", instead: "owoce w syropie" },
-      sk: { word: "kompót", means: "fruit preserved in syrup, eaten with a spoon", instead: "ovocný nápoj" },
-      cs: { word: "kompot", means: "fruit preserved in syrup" },
+      pl: { word: "kompot", instead: "owoce w syropie" },
+      sk: { word: "kompót", instead: "ovocný nápoj" },
+      cs: { word: "kompot" },
     },
     {
-      pl: { word: "sklep", means: "shop", instead: "piwnica" },
-      sk: { word: "sklep", means: "cellar", instead: "obchod" },
-      cs: { word: "sklep", means: "cellar" },
+      pl: { word: "sklep", instead: "piwnica" },
+      sk: { word: "sklep", instead: "obchod" },
+      cs: { word: "sklep" },
     },
     {
-      pl: { word: "obchód", means: "a round, a patrol", instead: "sklep" },
-      sk: { word: "obchod", means: "shop", instead: "obchôdzka" },
-      cs: { word: "obchod", means: "shop" },
+      pl: { word: "obchód", instead: "sklep" },
+      sk: { word: "obchod", instead: "obchôdzka" },
+      cs: { word: "obchod" },
     },
     {
-      pl: { word: "zachód", means: "west, sunset", instead: "toaleta" },
-      sk: { word: "záchod", means: "toilet", instead: "západ" },
-      cs: { word: "záchod", means: "toilet" },
+      pl: { word: "zachód", instead: "toaleta" },
+      sk: { word: "záchod", instead: "západ" },
+      cs: { word: "záchod" },
     },
     {
-      pl: { word: "zapach", means: "smell, scent", instead: "smród" },
-      sk: { word: "zápach", means: "stench", instead: "vôňa" },
-      cs: { word: "zápach", means: "stench" },
+      pl: { word: "zapach", instead: "smród" },
+      sk: { word: "zápach", instead: "vôňa" },
+      cs: { word: "zápach" },
     },
     {
-      pl: { word: "laska", means: "walking stick; slang: an attractive girl", instead: "miłość" },
-      sk: { word: "láska", means: "love", instead: "palica" },
-      cs: { word: "láska", means: "love" },
+      pl: { word: "laska", instead: "miłość" },
+      sk: { word: "láska", instead: "palica" },
+      cs: { word: "láska" },
     },
     {
-      pl: { word: "urok", means: "charm", instead: "odsetki" },
-      sk: { word: "úrok", means: "interest on a loan", instead: "pôvab" },
-      cs: { word: "úrok", means: "interest on a loan" },
+      pl: { word: "urok", instead: "odsetki" },
+      sk: { word: "úrok", instead: "pôvab" },
+      cs: { word: "úrok" },
     },
     {
-      pl: { word: "jagody", means: "blueberries", instead: "truskawki" },
-      sk: { word: "jahody", means: "strawberries", instead: "čučoriedky" },
-      cs: { word: "jahody", means: "strawberries" },
+      pl: { word: "jagody", instead: "truskawki" },
+      sk: { word: "jahody", instead: "čučoriedky" },
+      cs: { word: "jahody" },
     },
     {
-      pl: { word: "dywan", means: "carpet", instead: "kanapa" },
-      sk: { word: "diván", means: "couch", instead: "koberec" },
-      cs: { word: "divan", means: "couch" },
+      pl: { word: "dywan", instead: "kanapa" },
+      sk: { word: "diván", instead: "koberec" },
+      cs: { word: "divan" },
     },
     {
-      pl: { word: "zawód", means: "profession; disappointment", instead: "zakład, wyścig" },
-      sk: { word: "závod", means: "factory; race", instead: "povolanie, sklamanie" },
-      cs: { word: "závod", means: "factory; race" },
+      pl: { word: "zawód", instead: "zakład, wyścig" },
+      sk: { word: "závod", instead: "povolanie, sklamanie" },
+      cs: { word: "závod" },
     },
     {
-      pl: { word: "szykowny", means: "chic, elegant", instead: "zręczny" },
-      sk: { word: "šikovný", means: "skilful, handy", instead: "elegantný" },
-      cs: { word: "šikovný", means: "skilful, handy" },
+      pl: { word: "szykowny", instead: "zręczny" },
+      sk: { word: "šikovný", instead: "elegantný" },
+      cs: { word: "šikovný" },
     },
     {
-      pl: { word: "frajer", means: "a sucker, a mug", instead: "chłopak, gość" },
-      sk: { word: "frajer", means: "a cool guy; boyfriend", instead: "hlupák" },
-      cs: { word: "frajer", means: "a cool guy" },
+      pl: { word: "frajer", instead: "chłopak, gość" },
+      sk: { word: "frajer", instead: "hlupák" },
+      cs: { word: "frajer" },
     },
     {
-      pl: { word: "trup", means: "corpse", instead: "tułów" },
-      sk: { word: "trup", means: "torso", instead: "mŕtvola" },
-      cs: { word: "trup", means: "torso" },
+      pl: { word: "trup", instead: "tułów" },
+      sk: { word: "trup", instead: "mŕtvola" },
+      cs: { word: "trup" },
     },
     {
-      pl: { word: "pozór", means: "appearance (na pozór: seemingly)", instead: "uwaga!" },
-      sk: { word: "pozor", means: "attention! watch out!", instead: "zdanie" },
-      cs: { word: "pozor", means: "attention! watch out!" },
+      pl: { word: "pozór", instead: "uwaga!" },
+      sk: { word: "pozor", instead: "zdanie" },
+      cs: { word: "pozor" },
     },
   ];
 

@@ -1,6 +1,6 @@
 # Europe Word Map
 
-Type an English word and see it translated into 43 European languages, written on a
+Type a word and see it translated into 43 European languages, written on a
 map of Europe. Countries whose words sound alike share a colour, one colour per
 group. Click a country to compare everything with it instead: red for (nearly) the
 same word, orange for somewhat similar, grey for unrelated.
@@ -9,7 +9,25 @@ Type *word* and Poland (*słowo*), Czechia and Slovakia (*slovo*), and Russia an
 Ukraine (*слово*) all share one colour. Germany (*Wort*), the Netherlands (*woord*)
 and England (*word*) form a second group.
 
-**Live:** https://gregaw.github.io/word-map/
+**Live:** https://gregaw.github.io/word-map/ — also in
+[Polish](https://gregaw.github.io/word-map/pl/),
+[German](https://gregaw.github.io/word-map/de/) and
+[Italian](https://gregaw.github.io/word-map/it/).
+
+## Languages of the page
+
+The page comes in English (`index.html`), Polish (`pl/`), German (`de/`) and Italian
+(`it/`); the EN | PL | DE | IT links switch between them, and `?lang=pl` works too. In
+each, you type words in that language (*czwartek*, *Donnerstag*, *giovedì*), and
+everything is in it: buttons, story captions, group names, false-friend meanings and the
+**?** panel. Language and country names come from the browser (`Intl.DisplayNames`).
+
+- The strings live in `i18n-en.js`, `i18n-pl.js`, `i18n-de.js` and `i18n-it.js`, all
+  with the same keys (the tests check). `index.html` marks its fixed text with
+  `data-i18n="key"`.
+- `pl/index.html` and the others are generated copies of `index.html` with a
+  `<base href="../">`. Run `npm run build-langs` after editing `index.html`; the tests
+  fail while a copy is stale.
 
 ## Run it
 
@@ -26,7 +44,12 @@ Translating a word needs internet access.
 
 - **Click a country** (or a row in the list) to compare every language with that
   country's word. Click it again to go back to "all groups".
-- **Hover** a country to see all of its languages (Belgium, Switzerland, Finland, ...).
+- **Hover** a country with the mouse to see all of its languages (Belgium, Switzerland,
+  Finland, ...). The tooltip goes after a couple of seconds or on a click, and never
+  shows on a touch screen, so it doesn't cover the map.
+- **▶ Show me how** plays a short demo with a pretend cursor: type a word, look at its
+  groups, click a country, read the scale, try the hand-picked switch, find **?**. Any
+  click or key stops it. `#demo` in the address starts it.
 - `index.html?q=water` opens the page with a word already translated.
 - **Prepared words** (buttons under the search box): word, telephone, remember, forget,
   fresh, stale, Italy, Germany, tea, coffee, milk, Slav, slave. Their translations are bundled in
@@ -35,10 +58,11 @@ Translating a word needs internet access.
   step through the whole list compared with Polish.
 - **Stories** (third row of buttons): 12 words that tell a story about Europe's language
   families: Thursday, Saturday, Christmas, king, bread, church, orange, tomato, potato,
-  turkey, night, mother. A caption under the buttons explains each one (for example,
-  Slavic *król* comes from Charlemagne's name *Karl*). The caption also has a button to
+  turkey, night, mother. A caption under the buttons tells each story origin first: where
+  each version of the word comes from, and where it went (for example, Charlemagne's name
+  *Karl*: the Slavs' *król*, *король*, *kralj*). The caption also has a button to
   compare against the country whose view tells the story best, e.g. Greece for *orange*.
-  They are in `stories.js`.
+  The words are in `stories.js`, the captions in `i18n-xx.js`.
 - **False friends PL / SK** (second row of buttons): 15 Polish–Slovak pairs that sound
   alike but mean different things, such as *czerstwy* (stale) / *čerstvý* (fresh) and
   *sklep* (shop) / *sklep* (cellar). The map zooms onto Poland, Slovakia and Czechia and
@@ -51,7 +75,8 @@ slides, or as an offline fallback on a phone.
 
 ## Translation
 
-Choose the translation service under *Translation settings*:
+Words are translated from the page's language (English, Polish, German or Italian). Choose
+the translation service under *Translation settings*:
 
 | Service | Setup | Notes |
 | --- | --- | --- |
@@ -66,8 +91,9 @@ The **?** button next to *Translate* explains this on the page itself. Its examp
 and thresholds are computed from the code when it opens, so they stay current.
 
 **Reading the explanation in another language:**
-- On the live page, the panel's **Read this in…** picker opens the page through Google
-  Translate with the panel already open (`#how` in the address opens it).
+- The panel's **Other languages** picker opens this page's own Polish, German, Italian
+  or English version, with the panel open (`#how` in the address opens it).
+- On the live page, it also offers other languages through Google Translate.
 - On a local copy, use the browser's own Translate.
 - Either way, the map, the word buttons and the side list are marked `translate="no"`,
   so the words being compared are never machine-translated.
@@ -99,12 +125,12 @@ yellow, …), and a language that sounds less like the rest of its group is pale
   words are most alike on average keep merging while that average is at least 0.5. For
   *king* this finds the Slavic *król*, Germanic *König* and Latin *roi* groups.
 - The map always starts with these groups by sound.
-- For *Thursday*, *Saturday* and *Christmas* there are also groups by origin, written by
-  hand in `stories.js` (not found by the algorithm) and named on the map ("Thor's day",
-  "Jupiter's day", "the fourth day", "the fifth day"). The **Groups: By sound | By
-  origin** switch at the top of the side panel shows them. It stays on *By origin* across
-  words until switched back; words without origin groups show sound. Each visit starts
-  on *By sound*. The **?** panel works through *Christmas*:
+- For *Thursday*, *Saturday* and *Christmas* there are also hand-picked groups by
+  origin, hard-coded in `stories.js` (not found by the algorithm) and named on the map
+  ("Thor's day", "Jupiter's day", "the fourth day", "the fifth day"). The **Groups: By
+  sound | Hand-picked** switch at the top of the side panel shows them. It stays on
+  *Hand-picked* across words until switched back; words without hand-picked groups show
+  sound. Each visit starts on *By sound*. The **?** panel works through *Christmas*:
   - Polish *Boże Narodzenie* and Russian *Рождество* share the Slavic root *rod-*
     ("birth"), so the hand-written groups put them together.
   - By sound they score only about 22%. Sound alone puts Polish with Croatian *Božić*
@@ -116,15 +142,19 @@ yellow, …), and a language that sounds less like the rest of its group is pale
 | File | What |
 | --- | --- |
 | `index.html` | Page and styles |
-| `app.js` | Map drawing, translation, colouring |
+| `app.js` | Map drawing, translation, colouring, the demo |
+| `i18n.js` | The page's languages: which one is showing, string lookup |
+| `i18n-en.js`, `i18n-pl.js`, `i18n-de.js`, `i18n-it.js` | Every string of the page, story captions and the **?** panel, per language |
+| `pl/`, `de/`, `it/` | Generated: the page in each language (`npm run build-langs`) |
 | `similarity.js` | Romanisation, phonetic folding, scoring (also runs under Node) |
 | `presets.js` | Bundled translations for the prepared words |
-| `stories.js` | Story words, with their captions |
-| `translate-link.js` | Google Translate links for the "Read this in…" picker |
+| `stories.js` | Story words, and their hand-picked groups |
+| `translate-link.js` | Google Translate links for the "Other languages" picker |
 | `false-friends.js` | Polish–Slovak (and Czech) false-friend pairs |
 | `languages.js` | Which languages each country speaks, and label positions |
 | `map-data.js` | Generated: pre-projected SVG outlines (Natural Earth via world-atlas) |
 | `scripts/build-map.mjs` | Regenerates `map-data.js` |
+| `scripts/build-langs.js` | Regenerates `pl/`, `de/`, `it/` from `index.html` |
 | `scripts/screenshots.mjs`, `scripts/shrink_pngs.py` | Regenerate `screenshots/` |
 
 ## Develop
@@ -133,6 +163,7 @@ yellow, …), and a language that sounds less like the rest of its group is pale
 npm install          # only needed for the tests' dev tools and for build-map
 npm test             # unit tests for similarity + data consistency
 npm run build-map    # after changing countries or label positions in languages.js
+npm run build-langs  # after editing index.html
 npm run screenshots  # retake screenshots/ (needs Playwright's Chromium and Python Pillow;
                      # set CHROMIUM_PATH to use a Chromium you already have)
 python3 -m pytest tests/test_shrink_pngs.py

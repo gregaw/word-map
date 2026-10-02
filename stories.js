@@ -1,23 +1,23 @@
 // Words with a story across Europe's language families: Latin, Germanic,
 // Slavic, and the ones that crossed between them. Same format as presets.js
-// (word, or [word, romanisation]); `note` is shown under the buttons when the
-// word is on the map, with a button to compare against `ref`, the language
-// whose view tells the story best. `groups` (optional) are named groups by
-// origin, shown instead of the automatic sound clusters when no country is selected. Loaded after presets.js, which it extends.
+// (word, or [word, romanisation]). `ref` is the language whose view tells the
+// story best (the caption offers to compare with it). `groups` (optional) are
+// hand-picked groups by origin, [id, languages], shown when the viewer switches
+// to them. The captions and group names are in each i18n-xx.js, by word and id.
+// Loaded after presets.js, which it extends.
 (function (root) {
   "use strict";
 
   const STORIES = {
     Thursday: {
-      // Grouped by the origin of the word, which sound alone cannot recover here.
+      // Hand-picked by the origin of the word, which sound alone cannot recover here.
       groups: [
-        ["Thor's day", "en de nl lb da no sv fo fi"],
-        ["Jupiter's day", "fr it es ca gl ro cy"],
-        ["the fourth day", "pl cs sk ru uk be bg sr hr bs mk sl hu lv lt et"],
-        ["the fifth day", "pt el tr hy ka is mt"],
+        ["thor", "en de nl lb da no sv fo fi"],
+        ["jupiter", "fr it es ca gl ro cy"],
+        ["fourth", "pl cs sk ru uk be bg sr hr bs mk sl hu lv lt et"],
+        ["fifth", "pt el tr hy ka is mt"],
       ],
       ref: "fr",
-      note: "Latin countries named it after Jupiter (jeudi, giovedì, jueves), Germanic ones after Thor (Thursday, Donnerstag, torsdag). Slavs simply count: the fourth day (czwartek, четверг, čtvrtek), and Hungarian csütörtök is borrowed from them. Portuguese quinta-feira and Greek Πέμπτη count too: the fifth day, counting from Sunday.",
       words: {
         sq: ["e enjte", "enjte"], hy: ["հինգշաբթի", "hingshabti"], az: "cümə axşamı",
         eu: "osteguna", be: ["чацвер", "chatsver"], bs: "četvrtak",
@@ -34,15 +34,14 @@
       },
     },
     Saturday: {
-      // Grouped by the origin of the word, which sound alone cannot recover here.
+      // Hand-picked by the origin of the word, which sound alone cannot recover here.
       groups: [
-        ["Sabbath", "pl cs sk ru uk be bg sr hr bs mk sl hu it es pt gl ca fr ro de lb el hy ka mt az"],
-        ["Saturn's day", "en nl ga cy sq"],
-        ["washing day", "sv da no is fo fi et"],
-        ["the sixth day", "lv lt"],
+        ["sabbath", "pl cs sk ru uk be bg sr hr bs mk sl hu it es pt gl ca fr ro de lb el hy ka mt az"],
+        ["saturn", "en nl ga cy sq"],
+        ["washing", "sv da no is fo fi et"],
+        ["sixth", "lv lt"],
       ],
       ref: "pl",
-      note: "Most of Europe kept the Hebrew Sabbath: sobota, суббота, sábado, sabato, samedi, Samstag, szombat. English Saturday and Dutch zaterdag kept the Roman god Saturn. Swedish lördag and Finnish lauantai mean 'washing day'.",
       words: {
         sq: ["e shtunë", "shtunë"], hy: ["շաբաթ", "shabat"], az: "şənbə", eu: "larunbata",
         be: ["субота", "subota"], bs: "subota", bg: ["събота", "sabota"], ca: "dissabte",
@@ -57,19 +56,18 @@
       },
     },
     Christmas: {
-      // Grouped by the origin of the word, which sound alone cannot recover here.
+      // Hand-picked by the origin of the word, which sound alone cannot recover here.
       groups: [
-        ["birth (Latin natalis)", "fr it es pt ca gl cy ga tr"],
-        ["birth (Slavic)", "pl ru uk"],
-        ["Božić, 'little god'", "hr bs sr sl mk"],
-        ["Yule", "sv da no is fo fi et"],
-        ["Roman calendae", "lt bg be"],
-        ["from Weihnachten", "de cs sk"],
-        ["Christ's …", "en nl lb sq el"],
-        ["kračun", "ro hu"],
+        ["natalis", "fr it es pt ca gl cy ga tr"],
+        ["rod", "pl ru uk"],
+        ["bozic", "hr bs sr sl mk"],
+        ["yule", "sv da no is fo fi et"],
+        ["calendae", "lt bg be"],
+        ["weihnachten", "de cs sk"],
+        ["christ", "en nl lb sq el"],
+        ["kracun", "ro hu"],
       ],
       ref: "it",
-      note: "Latin and Celtic countries say 'birth' (Noël, Natale, Navidad, Nadolig, Nollaig), and so do Poles and Russians (Boże Narodzenie, Рождество). The North kept the pagan Yule (jul, joulu, jól). Czech Vánoce and Slovak Vianoce come from German Weihnachten; Lithuanian Kalėdos, Bulgarian Коледа and Belarusian Каляды from the Roman calendae.",
       words: {
         sq: "Krishtlindje", hy: ["Սուրբ Ծնունդ", "Surb Tsnund"], az: "Milad bayramı",
         eu: "Eguberri", be: ["Каляды", "Kaliady"], bs: "Božić", bg: ["Коледа", "Koleda"],
@@ -86,7 +84,6 @@
     },
     king: {
       ref: "pl",
-      note: "The Slavic word (król, король, kralj) comes from Karl: Charlemagne. Hungarians, Lithuanians, Latvians and Turks then took it from the Slavs (király, karalius, karalis, kral). Finns and Estonians borrowed the Germanic word (kuningas). Latin countries kept rex: roi, re, rey, rege.",
       words: {
         sq: "mbret", hy: ["թագավոր", "tagavor"], az: "kral", eu: "errege",
         be: ["кароль", "karol"], bs: "kralj", bg: ["крал", "kral"], ca: "rei", hr: "kralj",
@@ -101,7 +98,6 @@
     },
     bread: {
       ref: "pl",
-      note: "Slavic chleb and хлеб, and Finnish leipä, were borrowed from Gothic hlaifs, the same word as English 'loaf'. Latin countries kept panis: pain, pane, pan, pâine. Croats and Slovenes say kruh.",
       words: {
         sq: "bukë", hy: ["հաց", "hats"], az: "çörək", eu: "ogi", be: ["хлеб", "hleb"],
         bs: "hljeb", bg: ["хляб", "hliab"], ca: "pa", hr: "kruh", cs: ["chléb", "hleb"],
@@ -116,7 +112,6 @@
     },
     church: {
       ref: "ru",
-      note: "Western Slavs say kościół, kostel: from Latin castellum, a fort. Eastern and Southern Slavs say церковь, crkva: the same Germanic word as Kirche and church. Latin countries use the Greek ekklesia (église, iglesia, chiesa), but Romanian biserică is basilica.",
       words: {
         sq: "kishë", hy: ["եկեղեցի", "yekeghetsi"], az: "kilsə", eu: "eliza",
         be: ["царква", "tsarkva"], bs: ["crkva", "tsrkva"], bg: ["църква", "tsarkva"], ca: "església",
@@ -132,7 +127,6 @@
     },
     orange: {
       ref: "el",
-      note: "The Balkans, Greece, Turkey and Georgia name it after Portugal (πορτοκάλι, portakal, portocală, ფორთოხალი). The North and Russia call it the 'Chinese apple' (apelsin, апельсин, sinaasappel). Poles, Czechs and Slovaks took Italian pomo d'arancia: pomarańcza, pomeranč.",
       words: {
         sq: "portokall", hy: ["նարինջ", "narinj"], az: "portağal", eu: "laranja",
         be: ["апельсін", "apelsin"], bs: "narandža", bg: ["портокал", "portokal"],
@@ -149,7 +143,6 @@
     },
     tomato: {
       ref: "hu",
-      note: "Italian pomodoro, 'golden apple', became Polish, Russian and Georgian pomidor. Austrian Paradeiser, 'paradise apple', became Hungarian paradicsom, Serbian парадајз and Czech rajče. Most others took the Aztec tomatl: tomate, tomato, domates.",
       words: {
         sq: "domate", hy: ["լոլիկ", "lolik"], az: "pomidor", eu: "tomate",
         be: ["памідор", "pamidor"], bs: "paradajz", bg: ["домат", "domat"], ca: "tomàquet",
@@ -165,7 +158,6 @@
     },
     potato: {
       ref: "de",
-      note: "Europe named it five ways: 'earth apple' (pomme de terre, aardappel), 'earth thing' (ziemniak, zemiak), 'ground pear' (German dialect Grundbirne: krumpir, Gromper), 'truffle' (Italian tartufolo: Kartoffel, картофель) and 'bulb' (бульба, bulvė). Czech brambor is Brandenburg, where it came from. Spanish patata comes from the Caribbean batata.",
       words: {
         sq: "patate", hy: ["կարտոֆիլ", "kartofil"], az: "kartof", eu: "patata",
         be: ["бульба", "bulba"], bs: "krompir", bg: ["картоф", "kartof"], ca: "patata",
@@ -181,7 +173,6 @@
     },
     turkey: {
       ref: "nl",
-      note: "Everyone named the bird after somewhere else. English says Turkey; Turks, French, Poles and Russians say India (hindi, dinde, indyk, индейка); Portuguese say Peru; Dutch and Scandinavians say Calicut in India (kalkoen, kalkun); Macedonians say Egypt (мисирка).",
       words: {
         sq: "gjel deti", hy: ["հնդկահավ", "hndkahav"], az: "hind toyuğu", eu: "indioilar",
         be: ["індык", "indyk"], bs: "ćurka", bg: ["пуйка", "puika"], ca: "gall dindi",
@@ -197,7 +188,6 @@
     },
     night: {
       ref: "de",
-      note: "One word across all three families: night, Nacht, nuit, notte, noche, noc, ночь, all from the same Indo-European root. Only Finnish, Estonian, Hungarian, Basque and Turkish stand apart.",
       words: {
         sq: "natë", hy: ["գիշեր", "gisher"], az: "gecə", eu: "gau", be: ["ноч", "noch"],
         bs: "noć", bg: ["нощ", "nosht"], ca: "nit", hr: "noć", cs: "noc", da: "nat",
@@ -211,7 +201,6 @@
     },
     mother: {
       ref: "en",
-      note: "mother, Mutter, madre, matka, мать, máthair: Indo-European again. The outsiders are Finnish äiti, Estonian ema, Hungarian anya, Basque ama and Turkish anne. And in Georgian, mama means father; mother is deda.",
       words: {
         sq: "nënë", hy: ["մայր", "mayr"], az: "ana", eu: "ama", be: ["маці", "matsi"],
         bs: "majka", bg: ["майка", "maika"], ca: "mare", hr: "majka", cs: "matka",

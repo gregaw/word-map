@@ -42,6 +42,7 @@ const data = await page.evaluate(() => ({
   groups: window.EuropePresets.GROUPS,
   notes: window.EuropePresets.NOTES,
   friends: window.EuropeFalseFriends.FALSE_FRIENDS,
+  strings: window.EuropeI18n.STRINGS.en,
 }));
 const langName = (l) => data.langs[l][0];
 
@@ -104,7 +105,8 @@ for (const q of data.groups.stories || []) {
     await compareWith(note.ref);
     shots.push([await shoot(`stories/${n}-${slug(q)}-vs-${slug(langName(note.ref))}.png`, { withStory: true }), viewName(note.ref)]);
   }
-  index.stories.push({ q, text: note.text, shots });
+  const story = data.strings.stories[q];
+  index.stories.push({ q, text: [story.lead, ...story.points].join(" "), shots });
 }
 
 // False friends.
@@ -114,7 +116,7 @@ for (const f of data.friends) {
   await button("friends", label);
   index.friends.push([
     await shoot(`false-friends/${num(++i)}-${slug(f.pl.word)}-${slug(f.sk.word)}.png`),
-    `Polish *${f.pl.word}* = ${f.pl.means}; Slovak *${f.sk.word}* = ${f.sk.means}`,
+    `Polish *${f.pl.word}* = ${data.strings.friends[f.pl.word][0]}; Slovak *${f.sk.word}* = ${data.strings.friends[f.pl.word][1]}`,
   ]);
 }
 await browser.close();

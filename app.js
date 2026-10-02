@@ -4,6 +4,8 @@
   const { LANGUAGES, COUNTRIES, REGIONS } = window.EuropeLanguages;
   const { scoreAll, clusters } = window.WordSimilarity;
   const MAP = window.EuropeMap;
+  const I18N = window.EuropeI18n;
+  const { findPreset, presetLabel } = window.EuropePresets;
   const SVG_NS = "http://www.w3.org/2000/svg";
   const CLAUDE_MODEL = "claude-opus-5-5";
   const MYMEMORY_CONCURRENCY = 6;
@@ -11,6 +13,25 @@
   const $ = (id) => document.getElementById(id);
   const svg = $("map");
   const tip = $("tip");
+
+  // ---------- interface language ----------
+  // The page's language (set on <html> by scripts/build-langs.js, or ?lang=xx)
+  // is also the language typed words are in.
+  const LANG = (() => {
+    const asked = new URLSearchParams(location.search).get("lang");
+    if (I18N.UI_LANGS.includes(asked)) return asked;
+    const html = document.documentElement.lang;
+    return I18N.UI_LANGS.includes(html) ? html : I18N.detectLang(location);
+  })();
+  const STR = I18N.STRINGS[LANG];
+  const t = (key, vars) => I18N.t(LANG, key, vars);
+  const langName = (l) => I18N.displayName(LANG, l, "language");
+  const LangName = (l) => I18N.capitalise(LANG, langName(l));
+  const countryName = (c) => {
+    const n = I18N.displayName(LANG, c.iso, "region");
+    return n === c.iso ? c.name : n;
+  };
+  const regionName = (r) => STR.regions[r.name] || r.name;
 
   // Every language that appears on the map, in a stable order.
   const ALL_LANGS = [...new Set([
@@ -58,7 +79,7 @@
     for (const c of COUNTRIES) {
       const p = el("path", { d: MAP.countries[c.name].d, class: "country" }, land);
       p.addEventListener("click", () => setRef(c.langs[0]));
-      hover(p, () => countryTip(c));
+      hover(p, () => tipLines(countryName(c), c.langs));
       shapes[c.name] = p;
     }
     const regionLayer = el("g", {}, svg);
@@ -66,7 +87,7 @@
       const [x, y] = MAP.regions[i].at;
       const dot = el("circle", { cx: x, cy: y, r: 7, class: "region" }, regionLayer);
       dot.addEventListener("click", () => setRef(r.lang));
-      hover(dot, () => regionTip(r));
+      hover(dot, () => tipLines(regionName(r), [r.lang]));
       dots[r.name] = dot;
     }
     const text = el("g", {}, svg);
@@ -80,16 +101,34 @@
     }
   }
 
+  // A short-lived tooltip, for a mouse only: it goes after a moment, or as soon
+  // as the country is clicked, so it never sits on top of the map. A finger
+  // gets none; the words are on the map and in the list anyway.
+  const TIP_MS = 2200;
+  let tipTimer = 0;
+  function hideTip() {
+    clearTimeout(tipTimer);
+    tip.style.display = "none";
+  }
   function hover(node, content) {
-    node.addEventListener("mousemove", (e) => {
+    let shown = false;
+    node.addEventListener("pointerenter", (e) => {
+      if (e.pointerType !== "mouse") return;
+      shown = true;
       tip.replaceChildren(...content());
       tip.style.display = "block";
-      const pad = 14;
-      const w = tip.offsetWidth;
-      tip.style.left = Math.min(e.clientX + pad, window.innerWidth - w - 8) + "px";
-      tip.style.top = e.clientY + pad + "px";
+      place(e);
+      clearTimeout(tipTimer);
+      tipTimer = setTimeout(hideTip, TIP_MS);
     });
-    node.addEventListener("mouseleave", () => { tip.style.display = "none"; });
+    node.addEventListener("pointermove", (e) => { if (shown && tip.style.display === "block") place(e); });
+    node.addEventListener("pointerleave", () => { shown = false; hideTip(); });
+    node.addEventListener("pointerdown", () => { shown = false; hideTip(); });
+  }
+  function place(e) {
+    const pad = 14;
+    tip.style.left = Math.min(e.clientX + pad, window.innerWidth - tip.offsetWidth - 8) + "px";
+    tip.style.top = e.clientY + pad + "px";
   }
 
   function tipLines(title, langs) {
@@ -100,16 +139,14 @@
       const row = document.createElement("div");
       const w = state.words[l];
       const shown = w ? w.word + (w.latin && w.latin !== w.word ? ` (${w.latin})` : "") : "…";
-      row.textContent = `${LANGUAGES[l][0]}: ${state.query ? shown : "—"}`;
+      row.textContent = `${LangName(l)}: ${state.query ? shown : "—"}`;
       return row;
     });
     const hint = document.createElement("div");
     hint.style.color = "var(--muted)";
-    hint.textContent = "Click to compare everything with this language";
+    hint.textContent = t("tipHint");
     return [head, ...rows, hint];
   }
-  const countryTip = (c) => tipLines(c.name, c.langs);
-  const regionTip = (r) => tipLines(r.name, [r.lang]);
 
   // ---------- colour ----------
   const css = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
@@ -145,13 +182,13 @@
     const found = clusters(state.words, undefined, curated && curated.map((g) => g.langs));
     const groups = found.map((g, i) => {
       const name = curated
-        ? curated.find((c) => c.langs.includes(g.langs[0])).name
+        ? STR.groups[curated.find((c) => c.langs.includes(g.langs[0])).id]
         : null;
       // Name a found group after its most typical word.
       const centre = g.langs.reduce((a, b) => (g.strength[b] > g.strength[a] ? b : a));
       const base = i < GROUP_COLOURS ? css(`--g${i + 1}`) : null;
       const shade = (l) => (base ? mix(base, css("--land-lang"), Math.min(0.45, Math.max(0, (0.9 - g.strength[l]) * 0.7))) : null);
-      return { ...g, name: name || `like “${state.words[centre].word}”`, base, shade };
+      return { ...g, name: name || t("likeWord", { word: state.words[centre].word }), base, shade };
     });
     const byLang = {};
     for (const g of groups) for (const l of g.langs) byLang[l] = g;
@@ -160,10 +197,16 @@
   // A country is coloured by its first language that belongs to a group.
   const groupedLang = (langs, byLang) => langs.find((l) => byLang[l]) || langs[0];
 
-  // The legend's two forms; both are fixed markup, never built from translations.
-  const SCALE_LEGEND = $("legend").innerHTML;
-  const GROUP_LEGEND = [1, 2, 3, 4].map((i) => `<span class="sw" style="background:var(--g${i})"></span>`).join("") +
-    " one colour per group · paler = looser fit";
+  // The legend's two forms; both are fixed markup and interface strings, never
+  // built from translations. Read after applyStrings() has filled in the page.
+  let SCALE_LEGEND = "";
+  let GROUP_LEGEND = "";
+  function initLegend() {
+    SCALE_LEGEND = $("legend").innerHTML;
+    const note = document.createElement("span");
+    note.textContent = " " + t("groupLegend");
+    GROUP_LEGEND = [1, 2, 3, 4].map((i) => `<span class="sw" style="background:var(--g${i})"></span>`).join("") + note.outerHTML;
+  }
 
   const FULL_VIEW = `0 0 ${MAP.width} ${MAP.height}`;
 
@@ -235,6 +278,8 @@
 
   // First part of a meaning, short enough to sit under the word on the map.
   const short = (means) => means.split(/[;(]/)[0].trim();
+  // What a false friend's word means in one language, in the interface language.
+  const means = (pair, l) => STR.friends[pair.pl.word][{ pl: 0, sk: 1, cs: 2 }[l]];
 
   function setLabel(t, word, means) {
     t.replaceChildren(word);
@@ -261,14 +306,14 @@
       const inPair = lang in shade && f[lang];
       p.style.fill = inPair ? colour(shade[lang]) || "" : "";
       p.classList.remove("ref", "loading");
-      const t = labels[c.name];
+      const label = labels[c.name];
       if (inPair) {
-        setLabel(t, f[lang].word, f[lang].means);
-        t.setAttribute("font-size", 26 / scale);
-        t.style.strokeWidth = 4 / scale;
-        t.style.display = "";
+        setLabel(label, f[lang].word, means(f, lang));
+        label.setAttribute("font-size", 26 / scale);
+        label.style.strokeWidth = 4 / scale;
+        label.style.display = "";
       } else {
-        t.textContent = "";
+        label.textContent = "";
       }
     }
     for (const r of REGIONS) {
@@ -276,8 +321,7 @@
       labels["region:" + r.name].textContent = "";
     }
 
-    $("ref").textContent = "False friends: these sound alike, but mean different things.";
-    const names = { pl: "Polish", sk: "Slovak", cs: "Czech" };
+    $("ref").textContent = t("friendsRef");
     const other = { pl: "sk", sk: "pl" };
     const rows = ["pl", "sk", "cs"].filter((l) => f[l]).map((l) => {
       const li = document.createElement("li");
@@ -290,15 +334,15 @@
       w.textContent = f[l].word;
       const lang = document.createElement("span");
       lang.className = "lang";
-      lang.textContent = names[l];
-      const means = document.createElement("span");
-      means.className = "means";
-      means.textContent = f[l].means;
-      w.append(lang, means);
+      lang.textContent = LangName(l);
+      const meaning = document.createElement("span");
+      meaning.className = "means";
+      meaning.textContent = means(f, l);
+      w.append(lang, meaning);
       if (f[l].instead && other[l]) {
         const instead = document.createElement("span");
         instead.className = "lang";
-        instead.textContent = `For “${short(f[other[l]].means)}”, ${names[l]} says ${f[l].instead}.`;
+        instead.textContent = t("friendInstead", { m: short(means(f, other[l])), lang: langName(l), w: f[l].instead });
         w.appendChild(instead);
       }
       li.append(dot, w, document.createElement("span"));
@@ -318,7 +362,7 @@
     state.words = {};
     for (const l of ["pl", "sk", "cs"]) if (pair[l]) state.words[l] = { word: pair[l].word };
     $("go").disabled = false;
-    status(`False friend: Polish “${pair.pl.word}” means ${pair.pl.means}; Slovak “${pair.sk.word}” means ${pair.sk.means}.`);
+    status(t("friendStatus", { pl: pair.pl.word, plm: means(pair, "pl"), sk: pair.sk.word, skm: means(pair, "sk") }));
     render();
   }
 
@@ -326,28 +370,26 @@
     const ref = $("ref");
     ref.replaceChildren();
     if (!state.query) {
-      ref.textContent = "Type a word to begin. Click any country to compare against its language.";
+      ref.textContent = t("start");
     } else if (state.ref) {
-      ref.append("Compared with ");
       const b = document.createElement("b");
-      b.textContent = `${LANGUAGES[state.ref][0]} “${state.words[state.ref]?.word ?? "…"}”`;
-      ref.append(b, ". ");
+      b.textContent = t("comparedWith", { lang: langName(state.ref), word: state.words[state.ref]?.word ?? "…" });
+      ref.append(b, " ");
       const clear = document.createElement("button");
       clear.className = "ghost";
+      clear.id = "show-all";
       clear.style.padding = "2px 8px";
-      clear.textContent = "Show all groups";
+      clear.textContent = t("showAllGroups");
       clear.addEventListener("click", () => setRef(null));
       ref.append(clear);
     } else if (state.groupings) {
       // This word has hand-written groups by origin; let the viewer compare
       // them with what the clustering finds from sound alone.
-      ref.textContent = state.groupMode === "origin"
-        ? "Colours show groups by the origin of the word, written by hand, not found by the algorithm. Paler means it sounds less like the rest of its group."
-        : "Colours show groups of alike-sounding words, found automatically. Paler means a looser fit. This word also has groups by origin: switch above.";
+      ref.textContent = t(state.groupMode === "origin" ? "refPicked" : "refSoundHasPicked");
     } else if (state.groupMode === "origin" && state.query) {
-      ref.textContent = "No groups by origin for this word (only Christmas, Thursday and Saturday have them), so colours show groups by sound.";
+      ref.textContent = t("refNoPicked");
     } else {
-      ref.textContent = "Colours show groups of alike-sounding words, found automatically. Paler means a looser fit. Click a country to compare against it.";
+      ref.textContent = t("refSound");
     }
 
     const list = $("list");
@@ -370,19 +412,19 @@
         return li;
       };
       for (const g of grouped.groups) {
-        rows.push(header(g.base || css("--land-lang"), g.name, `${g.langs.length} languages`));
+        rows.push(header(g.base || css("--land-lang"), g.name, t("nLanguages", { n: g.langs.length })));
         const members = [...g.langs].sort((a, b) => g.strength[b] - g.strength[a]);
         for (const l of members) rows.push(langRow(l, g.shade(l) || css("--land-lang"), Math.round(g.strength[l] * 100) + "%"));
       }
       const rest = langs.filter((l) => !grouped.byLang[l]);
       if (rest.length) {
-        rows.push(header(css("--land-lang"), "Not in a group", `${rest.length} languages`));
+        rows.push(header(css("--land-lang"), t("notInGroup"), t("nLanguages", { n: rest.length })));
         for (const l of rest) rows.push(langRow(l, css("--land-lang"), ""));
       }
       list.replaceChildren(...rows);
       return;
     }
-    langs.sort((a, b) => (scores[b] ?? -1) - (scores[a] ?? -1) || LANGUAGES[a][0].localeCompare(LANGUAGES[b][0]));
+    langs.sort((a, b) => (scores[b] ?? -1) - (scores[a] ?? -1) || langName(a).localeCompare(langName(b), LANG));
     list.replaceChildren(...langs.map((l) => langRow(l, colour(scores[l]) || css("--land-lang"), scores[l] != null ? Math.round(scores[l] * 100) + "%" : "")));
   }
 
@@ -399,7 +441,7 @@
     if (entry && entry.latin && entry.latin !== entry.word) w.textContent += ` · ${entry.latin}`;
     const lang = document.createElement("span");
     lang.className = "lang";
-    lang.textContent = `${LANGUAGES[l][0]} — ${LANGUAGES[l][1]}`;
+    lang.textContent = `${LangName(l)} — ${LANGUAGES[l][1]}`;
     w.appendChild(lang);
     const pct = document.createElement("span");
     pct.className = "pct";
@@ -428,13 +470,15 @@
   }
 
   // ---------- translation ----------
-  const cacheKey = (provider, word) => `ewm:v1:${provider}:${word.toLowerCase()}`;
+  // Typed words are in the interface language. English keeps its old cache keys.
+  const cacheKey = (provider, word) =>
+    `ewm:v1:${provider}:${LANG === "en" ? "" : LANG + ":"}${word.toLowerCase()}`;
 
   async function translateMyMemory(word, onWord, isCurrent) {
     const email = $("mmemail").value.trim();
-    const queue = ALL_LANGS.filter((l) => l !== "en");
+    const queue = ALL_LANGS.filter((l) => l !== LANG);
     const total = queue.length;
-    onWord("en", { word });
+    onWord(LANG, { word });
     let quotaHit = false;
     const errors = [];
     async function worker() {
@@ -442,7 +486,7 @@
         const lang = queue.shift();
         const url = new URL("https://api.mymemory.translated.net/get");
         url.searchParams.set("q", word);
-        url.searchParams.set("langpair", `en|${lang}`);
+        url.searchParams.set("langpair", `${LANG}|${lang}`);
         if (email) url.searchParams.set("de", email);
         try {
           const res = await fetch(url);
@@ -454,19 +498,19 @@
           const clean = word === word.toLowerCase() && text === text.toUpperCase() ? text.toLowerCase() : text;
           onWord(lang, { word: clean });
         } catch (e) {
-          errors.push(`${LANGUAGES[lang][0]}: ${e.message}`);
+          errors.push(`${LangName(lang)}: ${e.message}`);
           onWord(lang, null);
         }
       }
     }
     await Promise.all(Array.from({ length: MYMEMORY_CONCURRENCY }, worker));
-    if (quotaHit) throw new Error("MyMemory's free daily quota is used up. Add an email in Translation settings, or switch to Claude.");
-    if (errors.length === total) throw new Error("Could not reach MyMemory. " + errors[0]);
+    if (quotaHit) throw new Error(t("quota"));
+    if (errors.length === total) throw new Error(t("unreachable") + " " + errors[0]);
   }
 
   async function translateClaude(word, onWord) {
     const key = $("apikey").value.trim();
-    if (!key) throw new Error("Add your Anthropic API key in Translation settings, or switch to MyMemory.");
+    if (!key) throw new Error(t("needKey"));
     const langList = ALL_LANGS.map((l) => `${l} (${LANGUAGES[l][0]})`).join(", ");
     const body = {
       model: CLAUDE_MODEL,
@@ -501,10 +545,11 @@
       messages: [{
         role: "user",
         content:
-          `Translate the English word "${word}" into each of these languages: ${langList}.\n\n` +
+          `Translate the ${LANGUAGES[LANG][0]} word "${word}" into each of these languages: ${langList}.\n\n` +
           "For each, give the single most common everyday equivalent a native speaker would use, " +
           "without articles, in its usual written script, lower case unless the language capitalises it (German nouns). " +
-          "If the English word has several senses, use the most common sense consistently across all languages. " +
+          `If the ${LANGUAGES[LANG][0]} word has several senses, ` +
+          " use the most common sense consistently across all languages. " +
           "In `latin`, give a simple romanisation of how it is pronounced (for Latin-script words, the word itself without diacritics). " +
           "Return one entry per language code, using the codes exactly as given.",
       }],
@@ -522,10 +567,10 @@
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(`Claude API ${res.status}: ${data?.error?.message || res.statusText}`);
-    if (data.stop_reason === "refusal") throw new Error("Claude declined to translate this word.");
+    if (data.stop_reason === "refusal") throw new Error(t("declined"));
     const text = (data.content || []).filter((b) => b.type === "text").map((b) => b.text).join("");
     let parsed;
-    try { parsed = JSON.parse(text); } catch { throw new Error("Claude's answer was not valid JSON (stop reason: " + data.stop_reason + ")."); }
+    try { parsed = JSON.parse(text); } catch { throw new Error(`${t("badJson")} (stop reason: ${data.stop_reason})`); }
     for (const t of parsed.translations || []) {
       if (LANGUAGES[t.lang] && t.word) onWord(t.lang, { word: t.word, latin: t.latin });
     }
@@ -545,15 +590,15 @@
     state.pending = new Set(ALL_LANGS);
     render();
 
-    const preset = window.EuropePresets.findPreset(word);
+    const preset = findPreset(word, LANG);
     if (preset) {
       state.query = preset.query;
       state.groupings = preset.groups || null;
       state.words = { ...preset.words };
       state.pending.clear();
       render();
-      status(`“${preset.query}” in ${Object.keys(state.words).length} languages. Hover a country for details; click one to compare against it.`);
-      story(preset.note);
+      status(t("inLanguages", { word: presetLabel(preset.query, LANG), n: Object.keys(state.words).length }));
+      story(preset.query, preset.note);
       return;
     }
 
@@ -563,12 +608,12 @@
         state.words = JSON.parse(cached);
         state.pending.clear();
         render();
-        status(`“${word}” — from cache.`);
+        status(t("fromCache", { word }));
         return;
       } catch { /* fall through and translate again */ }
     }
 
-    status(provider === "claude" ? "Asking Claude…" : "Translating…");
+    status(t(provider === "claude" ? "asking" : "translating"));
     $("go").disabled = true;
     const isCurrent = () => run === state.run;
     let scheduled = false;
@@ -583,7 +628,7 @@
       if (!isCurrent()) return;
       const got = Object.keys(state.words).length;
       if (got > 1) store.set(cacheKey(provider, word), JSON.stringify(state.words));
-      status(`“${word}” in ${got} languages. Hover a country for details; click one to compare against it.`);
+      status(t("inLanguages", { word, n: got }));
     } catch (e) {
       if (isCurrent()) status(e.message, true);
     } finally {
@@ -613,24 +658,34 @@
     sync();
   }
 
-  // One button per bundled word, for presenting without typing.
-  // The story behind a prepared word, shown under the buttons; hidden otherwise.
-  function story(note) {
+  // The story behind a prepared word, shown under the buttons; hidden otherwise:
+  // a lead line, then where each origin of the word went.
+  function story(query, note) {
     const s = $("story");
     s.replaceChildren();
-    s.hidden = !note;
-    if (!note) return;
-    s.append(note.text + " ");
-    if (note.ref && LANGUAGES[note.ref]) {
+    const text = query && STR.stories[query];
+    s.hidden = !text;
+    if (!text) return;
+    const lead = document.createElement("b");
+    lead.textContent = text.lead + " ";
+    s.append(lead);
+    if (note && note.ref && LANGUAGES[note.ref]) {
       const b = document.createElement("button");
       b.className = "ghost";
       b.style.padding = "2px 8px";
-      b.textContent = `Compare with ${LANGUAGES[note.ref][0]}`;
+      b.textContent = t("compareWith", { lang: langName(note.ref) });
       b.dataset.ref = note.ref;
       b.hidden = state.ref === note.ref;
       b.addEventListener("click", () => { if (state.ref !== note.ref) setRef(note.ref); });
       s.append(b);
     }
+    const points = document.createElement("ul");
+    for (const p of text.points) {
+      const li = document.createElement("li");
+      li.textContent = p;
+      points.appendChild(li);
+    }
+    s.append(points);
   }
 
   function initPresets(group, barId) {
@@ -639,8 +694,9 @@
       const b = document.createElement("button");
       b.type = "button";
       b.className = "chip";
-      b.textContent = query;
-      b.addEventListener("click", () => { $("word").value = query; search(query); });
+      b.dataset.query = query;
+      b.textContent = presetLabel(query, LANG);
+      b.addEventListener("click", () => { $("word").value = b.textContent; search(query); });
       bar.appendChild(b);
     }
   }
@@ -652,7 +708,7 @@
       b.type = "button";
       b.className = "chip";
       b.textContent = `${pair.pl.word} / ${pair.sk.word}`;
-      b.title = `Polish: ${pair.pl.means} · Slovak: ${pair.sk.means}`;
+      b.title = `${LangName("pl")}: ${means(pair, "pl")} · ${LangName("sk")}: ${means(pair, "sk")}`;
       b.addEventListener("click", () => showFriend(pair));
       bar.appendChild(b);
     }
@@ -662,13 +718,15 @@
   // the explanation cannot drift from what the page actually does.
   function initHelp() {
     const dialog = $("howto");
+    // The panel's text is this language's own, from i18n-xx.js (fixed markup).
+    dialog.querySelector(".body").innerHTML = STR.help;
     const pct = (v) => Math.round(v * 100) + "%";
     const { SETTINGS, similarity } = window.WordSimilarity;
     const values = {
       clusterThreshold: pct(SETTINGS.clusterThreshold),
       skeletonWeight: pct(SETTINGS.skeletonWeight),
       skeletonMinShared: String(SETTINGS.skeletonMinShared),
-      bands: BANDS.map(([from, token], i) => `${["pale", "orange", "dark orange", "red"][i]} from ${pct(from)}`).join(", "),
+      bands: BANDS.map(([from], i) => `${t("bands")[i]} (${pct(from)}+)`).join(", "),
     };
     for (const el of dialog.querySelectorAll("[data-value]")) el.textContent = values[el.dataset.value];
     for (const el of dialog.querySelectorAll("[data-a]")) {
@@ -679,28 +737,169 @@
       el.addEventListener("click", () => {
         dialog.close();
         state.ref = null;
-        $("word").value = el.dataset.show;
+        $("word").value = presetLabel(el.dataset.show, LANG);
         search(el.dataset.show); // prepared words show at once, before it returns
         setGroupMode(el.dataset.mode === "origin" ? "origin" : "sound");
       });
     }
-    // "Read this in…": open the live page through Google Translate, panel open.
+    // "Other languages": this page's own languages, then others through Google
+    // Translate's proxy (only for a public https copy), the panel open on arrival.
     const { READ_IN, translateLink } = window.TranslateLink;
-    if (translateLink(location.href, "pl")) {
-      const pick = $("readin");
-      for (const [code, name] of READ_IN) pick.add(new Option(name, code));
-      pick.addEventListener("change", () => {
-        if (pick.value) window.open(translateLink(location.href, pick.value), "_blank", "noopener");
-        pick.value = "";
-      });
-      $("readin-wrap").hidden = false;
+    const pick = $("readin");
+    pick.options[0].textContent = I18N.capitalise(LANG, langName(LANG));
+    const own = I18N.UI_LANGS.filter((l) => l !== LANG);
+    for (const l of own) pick.add(new Option(I18N.capitalise(l, I18N.displayName(l, l, "language")), "page:" + l));
+    const proxied = !!translateLink(location.href, "fr", "#how", LANG);
+    if (proxied) {
+      for (const [code, name] of READ_IN) if (!I18N.UI_LANGS.includes(code)) pick.add(new Option(name, code));
     } else {
       $("readin-tip").hidden = false;
     }
+    pick.addEventListener("change", () => {
+      const v = pick.value;
+      pick.value = "";
+      if (v.startsWith("page:")) location.href = langHref(v.slice(5)) + "#how";
+      else if (v) window.open(translateLink(location.href, v, "#how", LANG), "_blank", "noopener");
+    });
     $("help").addEventListener("click", () => dialog.showModal());
     $("howto-close").addEventListener("click", () => dialog.close());
     // A click on the backdrop (outside the panel) closes it too.
     dialog.addEventListener("click", (e) => { if (e.target === dialog) dialog.close(); });
+  }
+
+  // ---------- "Show me how" ----------
+  // A pretend cursor walks through the page with a caption at the bottom: type a
+  // word, look at its groups, click a country, read the scale, try the
+  // hand-picked switch, find the ? button. Any real click or key press stops it.
+  const ABORT = new Error("demo stopped");
+  let demoRunning = false;
+
+  async function runDemo() {
+    if (demoRunning) return;
+    demoRunning = true;
+    let stopped = false;
+    const stop = (e) => { if (e.isTrusted) stopped = true; };
+    const cursor = document.createElement("div");
+    cursor.id = "demo-cursor";
+    cursor.innerHTML = '<svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true"><path d="M4 2l15 11-6.5 1 3.8 7.2-2.6 1.3-3.8-7.2L5 20z"/></svg>';
+    const caption = document.createElement("div");
+    caption.id = "demo-caption";
+    caption.setAttribute("role", "status");
+    document.body.append(cursor, caption);
+    cursor.style.transform = `translate(${innerWidth / 2}px, ${innerHeight / 2}px)`;
+    // Listen after this click has finished, or it would stop the demo at once.
+    setTimeout(() => {
+      addEventListener("pointerdown", stop, true);
+      addEventListener("keydown", stop, true);
+    });
+
+    const wait = (ms) => new Promise((resolve, reject) =>
+      setTimeout(() => (stopped ? reject(ABORT) : resolve()), ms));
+    const say = (key) => { caption.textContent = t(key); };
+    async function moveTo(node) {
+      const box = node.getBoundingClientRect();
+      if (box.top < 60 || box.bottom > innerHeight - 90) {
+        node.scrollIntoView({ block: "center", behavior: "smooth" });
+        await wait(550);
+      }
+      const r = node.getBoundingClientRect();
+      cursor.style.transform = `translate(${r.left + r.width / 2}px, ${r.top + r.height / 2}px)`;
+      await wait(750);
+    }
+    async function click(node) {
+      cursor.classList.add("click");
+      await wait(220);
+      cursor.classList.remove("click");
+      if (node) node.click();
+      await wait(250);
+    }
+
+    try {
+      if ($("howto").open) $("howto").close();
+      state.ref = null;
+      say("demoStart");
+      await wait(1400);
+
+      say("demoWord");
+      const chip = document.querySelector('#stories [data-query="Christmas"]');
+      await moveTo(chip);
+      await wait(500);
+      await moveTo($("word"));
+      const word = presetLabel("Christmas", LANG);
+      $("word").value = "";
+      for (const ch of word) { $("word").value += ch; await wait(90); }
+      await moveTo($("go"));
+      await click();
+      search(word);
+      await wait(1200);
+
+      say("demoGroups");
+      await moveTo(shapes.France);
+      await wait(900);
+      const group = document.querySelector("#list li.group");
+      if (group) { await moveTo(group); await wait(1400); }
+
+      say("demoCountry");
+      await moveTo(shapes.Poland);
+      await click();
+      setRef("pl");
+      await wait(1600);
+
+      say("demoScale");
+      await moveTo($("legend"));
+      await wait(2200);
+
+      say("demoPicked");
+      const [bySound, picked] = document.querySelectorAll("#groupmode button");
+      await moveTo(picked);
+      await click(picked);
+      await wait(2600);
+      await moveTo(bySound);
+      await click(bySound);
+      await wait(600);
+
+      say("demoHelp");
+      await moveTo($("help"));
+      await wait(2400);
+    } catch (e) {
+      if (e !== ABORT) throw e;
+    } finally {
+      removeEventListener("pointerdown", stop, true);
+      removeEventListener("keydown", stop, true);
+      cursor.remove();
+      caption.remove();
+      demoRunning = false;
+    }
+  }
+
+  // ---------- interface strings ----------
+  // Fixed page text carries data-i18n="key" (and -placeholder, -title, -label
+  // for attributes); English is in the markup, other languages come from here.
+  function applyStrings() {
+    document.title = t("title");
+    for (const el of document.querySelectorAll("[data-i18n]")) el.textContent = t(el.dataset.i18n);
+    const attrs = { placeholder: "i18nPlaceholder", title: "i18nTitle", "aria-label": "i18nLabel" };
+    for (const [attr, key] of Object.entries(attrs)) {
+      const selector = "[data-" + key.replace(/[A-Z]/g, (c) => "-" + c.toLowerCase()) + "]";
+      for (const el of document.querySelectorAll(selector)) el.setAttribute(attr, t(el.dataset[key]));
+    }
+  }
+
+  // Where another interface language lives. <base> makes this relative to the
+  // site root on every page; a copy opened from disk needs the file name.
+  const langHref = (l) => I18N.langPath(l, location.protocol === "file:");
+
+  function initLangSwitch() {
+    const nav = $("langs");
+    for (const l of I18N.UI_LANGS) {
+      const a = document.createElement("a");
+      a.textContent = l.toUpperCase();
+      a.lang = l;
+      a.title = I18N.capitalise(l, I18N.displayName(l, l, "language"));
+      a.href = langHref(l);
+      if (l === LANG) a.setAttribute("aria-current", "page");
+      nav.appendChild(a);
+    }
   }
 
   for (const b of document.querySelectorAll("#groupmode button")) {
@@ -710,10 +909,14 @@
     });
   }
 
+  applyStrings();
+  initLegend();
+  initLangSwitch();
   drawMap();
   initSettings();
   initHelp();
   if (location.hash === "#how") $("howto").showModal();
+  $("demo").addEventListener("click", runDemo);
   initPresets("words", "presets");
   initPresets("stories", "stories");
   initFriends();
@@ -722,4 +925,5 @@
   window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", render);
   const initial = new URLSearchParams(location.search).get("q");
   if (initial) { $("word").value = initial; search(initial); }
+  if (location.hash === "#demo") runDemo();
 })();
