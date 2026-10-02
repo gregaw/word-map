@@ -65,6 +65,9 @@
   #howto .ex { font-variant-numeric: tabular-nums; white-space: nowrap; font-weight: 600; }
   #howto .bar { position: sticky; top: 0; display: flex; justify-content: flex-end; padding: 10px 12px 6px; background: var(--panel); border-bottom: 1px solid var(--line); }
   #howto .bar button { padding: 4px 12px; }
+  #howto .bar { gap: 10px; align-items: center; }
+  #howto .readin { margin-right: auto; font-size: 13px; color: var(--muted); }
+  #howto .readin select { margin-left: 6px; padding: 3px 6px; border-radius: 6px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); font: inherit; }
   button:disabled { opacity: 0.5; cursor: default; }
   .presets { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
   .rowlabel { font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); align-self: center; }
@@ -136,14 +139,14 @@
     <button id="go" type="submit">Translate</button>
     <button id="help" type="button" class="ghost help" aria-label="How it works" aria-haspopup="dialog" title="How it works">?</button>
   </form>
-  <div id="presets" class="presets" aria-label="Prepared words"><span class="rowlabel">Words</span></div>
-  <div id="stories" class="presets" aria-label="Words with a story"><span class="rowlabel">Stories</span></div>
-  <div id="friends" class="presets" aria-label="Polish–Slovak false friends"><span class="rowlabel">False friends PL / SK</span></div>
+  <div id="presets" class="presets notranslate" translate="no" aria-label="Prepared words"><span class="rowlabel">Words</span></div>
+  <div id="stories" class="presets notranslate" translate="no" aria-label="Words with a story"><span class="rowlabel">Stories</span></div>
+  <div id="friends" class="presets notranslate" translate="no" aria-label="Polish–Slovak false friends"><span class="rowlabel">False friends PL / SK</span></div>
   <p id="status"></p>
   <p id="story" class="story" hidden></p>
 </header>
 <main>
-  <div class="mapwrap"><svg id="map" role="img" aria-label="Map of Europe"></svg></div>
+  <div class="mapwrap notranslate" translate="no"><svg id="map" role="img" aria-label="Map of Europe"></svg></div>
   <aside>
     <h2>Similarity</h2>
     <div class="legend" id="legend">
@@ -154,7 +157,7 @@
       <span class="sw" style="background:var(--s4)"></span>same
     </div>
     <p id="ref"></p>
-    <ol id="list"></ol>
+    <ol id="list" class="notranslate" translate="no"></ol>
     <details id="settings">
       <summary>Translation settings</summary>
       <label for="provider">Translate with</label>
@@ -177,7 +180,14 @@
 </main>
 <div id="tip"></div>
 <dialog id="howto" aria-labelledby="howto-title">
-  <div class="bar"><button id="howto-close" class="ghost" type="button">Close</button></div>
+  <div class="bar">
+    <label class="readin" id="readin-wrap" hidden>Read this in
+      <select id="readin" class="notranslate" translate="no"><option value="">English</option></select>
+    </label>
+    <span class="readin" id="readin-tip" hidden>To read this in another language, use your browser's
+      Translate (right-click → Translate).</span>
+    <button id="howto-close" class="ghost" type="button">Close</button>
+  </div>
   <div class="body">
     <h2 id="howto-title">How it works</h2>
     <p class="disclaimer"><b>Just for fun.</b> This is a hobby project, not linguistic
@@ -291,6 +301,7 @@
 <script src="stories.js"></script>
 <script src="false-friends.js"></script>
 <script src="map-data.js"></script>
+<script src="translate-link.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

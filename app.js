@@ -678,6 +678,19 @@
         render();
       });
     }
+    // "Read this in…": open the live page through Google Translate, panel open.
+    const { READ_IN, translateLink } = window.TranslateLink;
+    if (translateLink(location.href, "pl")) {
+      const pick = $("readin");
+      for (const [code, name] of READ_IN) pick.add(new Option(name, code));
+      pick.addEventListener("change", () => {
+        if (pick.value) window.open(translateLink(location.href, pick.value), "_blank", "noopener");
+        pick.value = "";
+      });
+      $("readin-wrap").hidden = false;
+    } else {
+      $("readin-tip").hidden = false;
+    }
     $("help").addEventListener("click", () => dialog.showModal());
     $("howto-close").addEventListener("click", () => dialog.close());
     // A click on the backdrop (outside the panel) closes it too.
@@ -687,6 +700,7 @@
   drawMap();
   initSettings();
   initHelp();
+  if (location.hash === "#how") $("howto").showModal();
   initPresets("words", "presets");
   initPresets("stories", "stories");
   initFriends();

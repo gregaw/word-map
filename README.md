@@ -65,6 +65,13 @@ Each result is cached in the browser, so repeating a word costs nothing.
 The **?** button next to *Translate* explains this on the page itself. Its example scores
 and thresholds are computed from the code when it opens, so they stay current.
 
+**Reading the explanation in another language:**
+- On the live page, the panel's **Read this in…** picker opens the page through Google
+  Translate with the panel already open (`#how` in the address opens it).
+- On a local copy, use the browser's own Translate.
+- Either way, the map, the word buttons and the side list are marked `translate="no"`,
+  so the words being compared are never machine-translated.
+
 `similarity.js` does the following to each word:
 
 1. It romanises Cyrillic, Greek, Georgian and Armenian, or uses Claude's romanisation
@@ -112,6 +119,7 @@ yellow, …), and a language that sounds less like the rest of its group is pale
 | `similarity.js` | Romanisation, phonetic folding, scoring (also runs under Node) |
 | `presets.js` | Bundled translations for the prepared words |
 | `stories.js` | Story words, with their captions |
+| `translate-link.js` | Google Translate links for the "Read this in…" picker |
 | `false-friends.js` | Polish–Slovak (and Czech) false-friend pairs |
 | `languages.js` | Which languages each country speaks, and label positions |
 | `map-data.js` | Generated: pre-projected SVG outlines (Natural Earth via world-atlas) |

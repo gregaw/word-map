@@ -269,3 +269,27 @@ test("the How it works panel opens with the just-for-fun disclaimer", () => {
   const first = panel.indexOf("<p");
   assert.ok(panel.slice(first, first + 200).includes("Just for fun"), "disclaimer is the first paragraph");
 });
+
+test("translateLink builds Google Translate proxy links, and only for public https pages", () => {
+  const { translateLink, READ_IN } = require("../translate-link.js");
+  assert.equal(translateLink("https://gregaw.github.io/word-map/", "pl"),
+    "https://gregaw-github-io.translate.goog/word-map/?_x_tr_sl=en&_x_tr_tl=pl&_x_tr_hl=pl#how");
+  // "-" in a host doubles; existing query parameters are kept.
+  assert.equal(translateLink("https://my-site.example.com/a/?q=tea", "de"),
+    "https://my--site-example-com.translate.goog/a/?q=tea&_x_tr_sl=en&_x_tr_tl=de&_x_tr_hl=de#how");
+  for (const href of ["file:///home/me/index.html", "http://gregaw.github.io/word-map/",
+    "https://localhost/x", "https://192.168.1.23:8000/", "https://pi.local/", "not a url",
+    "https://gregaw-github-io.translate.goog/word-map/"]) {
+    assert.equal(translateLink(href, "pl"), null, href);
+  }
+  assert.ok(READ_IN.some(([code]) => code === "pl"));
+});
+
+test("the words themselves are kept out of machine translation", () => {
+  const html = require("node:fs").readFileSync(require("node:path").join(__dirname, "..", "index.html"), "utf8");
+  for (const id of ['id="presets"', 'id="stories"', 'id="friends"', 'id="list"']) {
+    const tag = html.slice(html.lastIndexOf("<", html.indexOf(id)), html.indexOf(">", html.indexOf(id)));
+    assert.match(tag, /translate="no"/, id);
+  }
+  assert.match(html, /class="mapwrap notranslate" translate="no"/);
+});
